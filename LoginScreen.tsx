@@ -1,10 +1,3 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
 import React, { useState } from 'react';
 import {
   View,
@@ -16,28 +9,10 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  StatusBar,
-  useColorScheme,
 } from 'react-native';
-import {
-  SafeAreaProvider,
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
 import firestore from '@react-native-firebase/firestore';
 
-function App() {
-  const isDarkMode = useColorScheme() === 'dark';
-
-  return (
-    <SafeAreaProvider>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <LoginScreen />
-    </SafeAreaProvider>
-  );
-}
-
-function LoginScreen() {
-  const safeAreaInsets = useSafeAreaInsets();
+const LoginScreen = () => {
   const [userName, setUserName] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -73,12 +48,8 @@ function LoginScreen() {
       if (userData.password === password) {
         Alert.alert('Success', `Welcome back, ${userData.userName}!`);
         
-        // Here you can navigate to your main app screen
-        // or set a logged-in state to show different content
-        console.log('User logged in:', {
-          id: userDoc.id,
-          ...userData
-        });
+        // Navigate to your main app screen
+        // navigation.navigate('Home', { userId: userDoc.id, userData });
         
         // Clear inputs
         setUserName('');
@@ -97,7 +68,7 @@ function LoginScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={[styles.container, { paddingTop: safeAreaInsets.top }]}>
+      style={styles.container}>
       <View style={styles.loginBox}>
         <Text style={styles.title}>Login</Text>
         <Text style={styles.subtitle}>Welcome back!</Text>
@@ -140,7 +111,7 @@ function LoginScreen() {
       </View>
     </KeyboardAvoidingView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -208,4 +179,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default App;
+export default LoginScreen;
