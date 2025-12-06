@@ -1,104 +1,83 @@
 // src/api/firebase.ts
 
 import auth from '@react-native-firebase/auth';
-// You will need to install this package for database access
-import database from '@react-native-firebase/database';
+// ⚠️ IMPORTANT: Import 'firestore' instead of 'database'
+import firestore from '@react-native-firebase/firestore';
 
-// --- Existing loginWithEmail function is fine as is ---
-
-/**
- * Saves a new user profile to the Firebase Realtime Database.
- */
+// ----------------------------------------------------------------------
+// 1. Private Utility: Saves the complete profile to Firestore
+//    (Used during signup to store username and initialize the discovered list)
+// ----------------------------------------------------------------------
 async function saveUserProfile(uid: string, email: string, username: string) {
-    // Reference to the 'users' collection with the user's UID as the key
-    const userRef = database().ref(`/users/${uid}`);
+    // 🔥 New Firestore syntax: Reference the 'users' collection and a document by UID
+    const userDocRef = firestore().collection('users').doc(uid);
 
-    // Data structure for the user profile
     const profileData = {
         uid: uid,
         email: email,
-        username: username,
-        discovered: [], // Initialize discovered list
-        createdAt: database.ServerValue.TIMESTAMP, // Helpful for sorting
+        username: username, // Stored for display purposes
+        discovered: [],
+        createdAt: firestore.FieldValue.serverTimestamp(), // Firestore way to get server time
     };
 
-    // Set the data in the database
-    await userRef.set(profileData);
-
+    // Use .set() to create the document
+    await userDocRef.set(profileData);
     return profileData;
 }
 
 
-/**
- * Handles user sign-up with email, password, AND username.
- * @param email
- * @param password
- * @param username
- * @returns A comprehensive user object including the username.
- */
-export async function signupWithEmail(email: string, password: string, username: string) {
-    try {
-        // STEP 1: Create the user with Firebase Auth
-        const response = await auth().createUserWithEmailAndPassword(email, password);
-        const uid = response.user.uid;
-
-        // STEP 2 (Optional but Recommended): Set the display name on the Auth profile
-        await response.user.updateProfile({
-            displayName: username,
-        });
-
-        // STEP 3: Save the full profile (including username) to the Realtime Database
-        const profile = await saveUserProfile(uid, email, username);
-
-        // Return the full profile data to update the Redux state
-        return profile;
-
-    } catch (error) {
-        console.error("Firebase Signup Error:", error);
-        // Better error message handling might be needed here depending on Firebase response
-        throw new Error('Signup failed. Email may already be in use or connection issue.');
-    }
-}
-
-
-/**
- * Fetches the user profile from the Realtime Database after login.
- * @param uid The user's unique ID.
- * @returns The user's custom profile data.
- */
+// ----------------------------------------------------------------------
+// 2. Private Utility: Fetches the complete profile from Firestore
+//    (Used after both login and signup to get the username and discovered list)
+// ----------------------------------------------------------------------
 async function fetchUserProfile(uid: string) {
-    // Reference to the user's profile in the 'users' collection
-    const snapshot = await database().ref(`/users/${uid}`).once('value');
+    // 🔥 New Firestore syntax: Get the document
+    const snapshot = await firestore().collection('users').doc(uid).get();
 
-    if (snapshot.exists()) {
-        return snapshot.val(); // Returns { uid, email, username, discovered, etc. }
+    if (snapshot.exists) {
+        // .data() returns the document fields
+        return snapshot.data();
     } else {
-        // This should not happen if signup was successful, but handles edge case
         throw new Error("User profile not found in database.");
     }
 }
 
 
-/**
- * Handles user sign-in with email and password.
- * @param email
- * @param password
- * @returns A comprehensive user object including the profile data.
- */
+// ----------------------------------------------------------------------
+// 3. Exported Function: Handles SIGNUP
+// ----------------------------------------------------------------------
+export async function signupWithEmail(email: string, password: string, username: string) {
+    try {
+        // ... (Auth logic remains the same)
+        const response = await auth().createUserWithEmailAndPassword(email, password);
+        const uid = response.user.uid;
+
+        // STEP 2: Save the full profile using the new Firestore function
+        const profile = await saveUserProfile(uid, email, username);
+
+        return profile;
+    } catch (error) {
+        console.error("Firebase Signup Error:", error);
+        throw new Error('Signup failed. Email may already be in use.');
+    }
+}
+
+
+// ----------------------------------------------------------------------
+// 4. Exported Function: Handles LOGIN
+// ----------------------------------------------------------------------
 export async function loginWithEmail(email: string, password: string) {
     try {
-        // STEP 1: Authenticate the user with Firebase Auth
+        // ... (Auth logic remains the same)
         const response = await auth().signInWithEmailAndPassword(email, password);
         const uid = response.user.uid;
 
-        // STEP 2: Fetch the custom user profile data (including username) from the DB
+        // STEP 2: Fetch the custom user profile data using the new Firestore function
         const profile = await fetchUserProfile(uid);
 
-        // Return the full profile data to update the Redux state
         return profile;
     } catch (error) {
         console.error("Firebase Login Error:", error);
-        // Firebase auth errors are often detailed; we return a generic message for security/simplicity
-        throw new Error('Authentication failed. Check your credentials.');
+        throw new Error('Authentication failed. Check your email and password.');
     }
 }
