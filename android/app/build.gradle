@@ -45,7 +45,7 @@ react {
     // extraPackagerArgs = []
 
     /* Hermes Commands */
-    //   The hermes compiler command to run. By default it is 'hermesc'
+    //   The hermes compiler command to run. By  default it is 'hermesc'
     // hermesCommand = "$rootDir/my-custom-hermesc/bin/hermesc"
     //
     //   The list of flags to pass to the Hermes compiler. By default is "-O", "-output-source-map"
@@ -112,6 +112,9 @@ dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
 
+    // --- Add Google/Firebase Dependencies Here ---
+    implementation 'com.google.firebase:firebase-analytics' // Necessary for tracking
+    implementation 'com.google.firebase:firebase-auth'      // Example for user authentication
 
 
     if (hermesEnabled.toBoolean()) {
