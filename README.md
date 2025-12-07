@@ -1,12 +1,12 @@
 node version: v20.19.6
 
-#Prerequisites/Addional Steps:
+# Prerequisites/Addional Steps:
 - If there are any additional steps you end up doing, please put them here for the group's reference...
 
 1. Node version
 - v20.19.6
 
-#Procedure:
+# Procedure:
 
 1. Install dependencies
 - npm install
