@@ -9,18 +9,20 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  ImageBackground,
 } from 'react-native';
 import firestore from '@react-native-firebase/firestore';
+import Video from 'react-native-video';
 
 const LoginScreen = () => {
   const [userName, setUserName] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
     // Input validation
-    if (!userName.trim() || !password.trim()) {
-      Alert.alert('Error', 'Please enter both username and password');
+    if (!userName.trim() || !email.trim()) {
+      Alert.alert('Error', 'Please enter both username and email');
       return;
     }
 
@@ -35,7 +37,7 @@ const LoginScreen = () => {
         .get();
 
       if (userSnapshot.empty) {
-        Alert.alert('Login Failed', 'Invalid username or password');
+        Alert.alert('Login Failed', 'Invalid username or email');
         setLoading(false);
         return;
       }
@@ -44,8 +46,8 @@ const LoginScreen = () => {
       const userDoc = userSnapshot.docs[0];
       const userData = userDoc.data();
 
-      // Check if password matches
-      if (userData.password === password) {
+      // Check if email matches
+      if (userData.email === email) {
         Alert.alert('Success', `Welcome back, ${userData.userName}!`);
         
         // Navigate to your main app screen
@@ -53,9 +55,9 @@ const LoginScreen = () => {
         
         // Clear inputs
         setUserName('');
-        setPassword('');
+        setEmail('');
       } else {
-        Alert.alert('Login Failed', 'Invalid username or password');
+        Alert.alert('Login Failed', 'Invalid username or email');
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -66,116 +68,164 @@ const LoginScreen = () => {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}>
-      <View style={styles.loginBox}>
-        <Text style={styles.title}>Login</Text>
-        <Text style={styles.subtitle}>Welcome back!</Text>
+    <View style={styles.container}>
+      {/* Video Background */}
+      <Video
+        source={require('../assets/background-video.mp4')}
+        style={styles.backgroundVideo}
+        resizeMode="cover"
+        repeat={true}
+        muted={true}
+        paused={false}
+      />
 
-        <TextInput
-          style={styles.input}
-          placeholder="Username"
-          placeholderTextColor="#999"
-          value={userName}
-          onChangeText={setUserName}
-          autoCapitalize="none"
-          editable={!loading}
-        />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.overlay}>
+        <View style={styles.loginBox}>
+          {/* Title */}
+          <Text style={styles.title}>LOGIN</Text>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          placeholderTextColor="#999"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          autoCapitalize="none"
-          editable={!loading}
-        />
+          {/* Username Input */}
+          <ImageBackground
+            source={require('../assets/inputs-Sheet.png')} // Your blue pokeball input
+            style={styles.inputBackground}
+            resizeMode="stretch">
+            <TextInput
+              style={styles.input}
+              placeholder="Username"
+              placeholderTextColor="#rgba(255,255,255,0.6)"
+              value={userName}
+              onChangeText={setUserName}
+              autoCapitalize="none"
+              editable={!loading}
+            />
+          </ImageBackground>
 
-        <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
-          onPress={handleLogin}
-          disabled={loading}>
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Sign In</Text>
-          )}
-        </TouchableOpacity>
+          {/* Email Input */}
+          <ImageBackground
+            source={require('../assets/inputs-Sheet.png')} // Your blue pokeball input (same image)
+            style={styles.inputBackground}
+            resizeMode="stretch">
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              placeholderTextColor="rgba(255,255,255,0.6)"
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              editable={!loading}
+            />
+          </ImageBackground>
 
-        <TouchableOpacity style={styles.forgotPassword}>
-          <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+          {/* Login Button */}
+          <TouchableOpacity
+            onPress={handleLogin}
+            disabled={loading}
+            activeOpacity={0.8}>
+            <ImageBackground
+              source={require('../assets/login button-Sheet.png')} // Your orange/yellow button
+              style={styles.button}
+              resizeMode="stretch">
+              {loading ? (
+                <ActivityIndicator color="#8B4513" />
+              ) : (
+                <Text style={styles.buttonText}>LOGIN</Text>
+              )}
+            </ImageBackground>
+          </TouchableOpacity>
+
+          {/* Don't have an account */}
+          <TouchableOpacity style={styles.signupLink}>
+            <Text style={styles.signupText}>Don't Have An Account?</Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+  },
+  backgroundVideo: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    bottom: 0,
+    right: 0,
+  },
+  overlay: {
+    flex: 1,
     justifyContent: 'center',
-    padding: 20,
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.1)', // Slight overlay for readability
   },
   loginBox: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 30,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 5,
+    width: '85%',
+    alignItems: 'center',
+    paddingVertical: 40,
   },
   title: {
-    fontSize: 32,
+    fontSize: 48,
     fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 5,
+    color: '#fff',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 4,
+    marginBottom: 60,
+    letterSpacing: 4,
   },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 30,
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: 20,
+  },
+  inputBackground: {
+    width: '90%',
+    height: 55,
+    justifyContent: 'center',
+    alignSelf: 'center',
   },
   input: {
-    backgroundColor: '#f9f9f9',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 15,
+    flex: 1,
+    paddingHorizontal: 50, // Space for pokeball icon on left
     fontSize: 16,
-    marginBottom: 15,
-    color: '#333',
+    color: '#fff',
+    fontWeight: '500',
   },
   button: {
-    backgroundColor: '#007AFF',
-    borderRadius: 8,
-    padding: 16,
+    width: 200,
+    height: 50,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 10,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
+    marginTop: 30,
   },
   buttonText: {
+    color: '#8B4513', // Dark brown for orange button
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  pikachu: {
+    width: 120,
+    height: 120,
+    position: 'absolute',
+    bottom: 80,
+    right: 20,
+    resizeMode: 'contain',
+  },
+  signupLink: {
+    marginTop: 30,
+  },
+  signupText: {
     color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  forgotPassword: {
-    marginTop: 20,
-    alignItems: 'center',
-  },
-  forgotPasswordText: {
-    color: '#007AFF',
-    fontSize: 14,
+    fontSize: 16,
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
 });
 
