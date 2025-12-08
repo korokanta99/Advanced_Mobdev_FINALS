@@ -1,5 +1,5 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { getPokemonList } from "../api/pokeapi"; // Assuming you added this
+import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import { getPokemonList } from "../api/pokeapi";
 import { cacheData, getCachedData } from "../utils/cache";
 
 // 1. Create the async action (Thunk)
@@ -9,7 +9,7 @@ export const fetchPokemon = createAsyncThunk(
     // Check cache first
     const cachedList = await getCachedData("pokemonList");
     if (cachedList) {
-      return cachedList; // Return cached data immediately
+      return cachedList;
     }
 
     // If not in cache, fetch from API
@@ -22,16 +22,26 @@ export const fetchPokemon = createAsyncThunk(
   }
 );
 
-// 2. Update the Slice to handle the Thunk's states
+// 2. The Slice
 const pokemonSlice = createSlice({
-  // ... existing name, initialState
+  // 🛑 FIX: This 'name' property was missing!
+  name: "pokemon",
+
   initialState: {
     list: [],
     favorites: [],
-    isLoading: false, // NEW: Loading state
-    error: null,      // NEW: Error state
+    isLoading: false,
+    error: null,
   },
-  // ... existing reducers
+  reducers: {
+    // Basic reducers (if you had any synchronous ones) can go here
+    setPokemonList(state, action) {
+        state.list = action.payload;
+    },
+    addFavorite(state, action) {
+        state.favorites.push(action.payload);
+    }
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchPokemon.pending, (state) => {
@@ -39,7 +49,7 @@ const pokemonSlice = createSlice({
       })
       .addCase(fetchPokemon.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.list = action.payload; // Set list from cache or API
+        state.list = action.payload;
         state.error = null;
       })
       .addCase(fetchPokemon.rejected, (state, action) => {
@@ -48,4 +58,7 @@ const pokemonSlice = createSlice({
       });
   },
 });
-// ... export actions and default
+
+// Export actions and reducer
+export const { setPokemonList, addFavorite } = pokemonSlice.actions;
+export default pokemonSlice.reducer;

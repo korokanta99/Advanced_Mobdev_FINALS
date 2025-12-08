@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,106 +12,68 @@ import {
   ImageBackground,
   ScrollView,
 } from 'react-native';
-import firestore from '@react-native-firebase/firestore';
+
+// 1. VIDEO IMPORT (Restored)
 import Video from 'react-native-video';
 
-const RegisterScreen = () => {
+// 2. REDUX IMPORTS (Backend Logic)
+import { useDispatch, useSelector } from 'react-redux';
+import { signupUser } from './src/store/userSlice';
+
+const RegisterScreen = ({ navigation }) => {
+  const dispatch = useDispatch();
+
+  // Get state from Redux
+  const { isLoading, error, profile } = useSelector((state) => state.user);
+
   const [userName, setUserName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [gender, setGender] = useState(''); // 'male' or 'female'
-  const [loading, setLoading] = useState(false);
+  const [gender, setGender] = useState('');
 
-  const handleRegister = async () => {
-    // Input validation
+  // Listener: Success
+  useEffect(() => {
+    if (profile) {
+      Alert.alert('Success', 'Account created successfully!', [
+        { text: 'Login Now', onPress: () => navigation.navigate('Login') },
+      ]);
+    }
+  }, [profile, navigation]);
+
+  // Listener: Error
+  useEffect(() => {
+    if (error && !isLoading) {
+      Alert.alert('Registration Failed', error);
+    }
+  }, [error, isLoading]);
+
+  const handleRegister = () => {
+    // Input Validation
     if (!userName.trim() || !email.trim() || !password.trim() || !confirmPassword.trim()) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
-
     if (!gender) {
       Alert.alert('Error', 'Please select your gender');
       return;
     }
-
     if (password !== confirmPassword) {
       Alert.alert('Error', 'Passwords do not match');
       return;
     }
-
     if (password.length < 6) {
       Alert.alert('Error', 'Password must be at least 6 characters');
       return;
     }
 
-    setLoading(true);
-
-    try {
-      // Check if username already exists
-      const userSnapshot = await firestore()
-        .collection('users')
-        .where('userName', '==', userName)
-        .limit(1)
-        .get();
-
-      if (!userSnapshot.empty) {
-        Alert.alert('Registration Failed', 'Username already exists');
-        setLoading(false);
-        return;
-      }
-
-      // Check if email already exists
-      const emailSnapshot = await firestore()
-        .collection('users')
-        .where('email', '==', email)
-        .limit(1)
-        .get();
-
-      if (!emailSnapshot.empty) {
-        Alert.alert('Registration Failed', 'Email already registered');
-        setLoading(false);
-        return;
-      }
-
-      // Create new user
-      await firestore()
-        .collection('users')
-        .add({
-          userName,
-          email,
-          password, // Note: In production, you should hash passwords!
-          gender,
-          createdAt: firestore.FieldValue.serverTimestamp(),
-        });
-
-      Alert.alert('Success', 'Account created successfully!', [
-        {
-          text: 'OK',
-          onPress: () => {
-            // Navigate to login screen
-            // navigation.navigate('Login');
-          },
-        },
-      ]);
-
-      // Clear inputs
-      setUserName('');
-      setEmail('');
-      setPassword('');
-      setConfirmPassword('');
-      setGender('');
-    } catch (error) {
-      console.error('Registration error:', error);
-      Alert.alert('Error', 'An error occurred during registration. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+    // CONNECTED: Dispatch the Secure Signup Action
+    dispatch(signupUser({ email, password, username: userName, gender }));
   };
 
   return (
     <View style={styles.container}>
-      {/* Video Background */}
+      {/* 🟢 VIDEO RESTORED: This should play your background now */}
       <Video
         source={require('./assets/pokemon-background.mp4')}
         style={styles.backgroundVideo}
@@ -130,7 +92,6 @@ const RegisterScreen = () => {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}>
           <View style={styles.registerBox}>
-            {/* Title */}
             <Text style={styles.title}>REGISTER</Text>
             <Text style={styles.subtitle}>Enter your training card</Text>
 
@@ -146,7 +107,7 @@ const RegisterScreen = () => {
                 value={userName}
                 onChangeText={setUserName}
                 autoCapitalize="none"
-                editable={!loading}
+                editable={!isLoading}
               />
             </ImageBackground>
 
@@ -163,7 +124,7 @@ const RegisterScreen = () => {
                 onChangeText={setEmail}
                 autoCapitalize="none"
                 keyboardType="email-address"
-                editable={!loading}
+                editable={!isLoading}
               />
             </ImageBackground>
 
@@ -180,7 +141,7 @@ const RegisterScreen = () => {
                 onChangeText={setPassword}
                 secureTextEntry
                 autoCapitalize="none"
-                editable={!loading}
+                editable={!isLoading}
               />
             </ImageBackground>
 
@@ -197,7 +158,7 @@ const RegisterScreen = () => {
                 onChangeText={setConfirmPassword}
                 secureTextEntry
                 autoCapitalize="none"
-                editable={!loading}
+                editable={!isLoading}
               />
             </ImageBackground>
 
@@ -211,7 +172,7 @@ const RegisterScreen = () => {
                     gender === 'male' && styles.genderButtonActive,
                   ]}
                   onPress={() => setGender('male')}
-                  disabled={loading}>
+                  disabled={isLoading}>
                   <Text
                     style={[
                       styles.genderButtonText,
@@ -227,7 +188,7 @@ const RegisterScreen = () => {
                     gender === 'female' && styles.genderButtonActive,
                   ]}
                   onPress={() => setGender('female')}
-                  disabled={loading}>
+                  disabled={isLoading}>
                   <Text
                     style={[
                       styles.genderButtonText,
@@ -242,13 +203,13 @@ const RegisterScreen = () => {
             {/* Sign Up Button */}
             <TouchableOpacity
               onPress={handleRegister}
-              disabled={loading}
+              disabled={isLoading}
               activeOpacity={0.8}>
               <ImageBackground
                 source={require('./assets/login button-Sheet.png')}
                 style={styles.button}
                 resizeMode="stretch">
-                {loading ? (
+                {isLoading ? (
                   <ActivityIndicator color="#8B4513" />
                 ) : (
                   <Text style={styles.buttonText}>SIGN UP</Text>
@@ -256,8 +217,9 @@ const RegisterScreen = () => {
               </ImageBackground>
             </TouchableOpacity>
 
-            {/* Already have an account */}
-            <TouchableOpacity style={styles.loginLink}>
+            <TouchableOpacity
+              style={styles.loginLink}
+              onPress={() => navigation.navigate('Login')}>
               <Text style={styles.loginText}>Already Have An Account?</Text>
             </TouchableOpacity>
           </View>

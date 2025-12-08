@@ -1,83 +1,57 @@
 // src/api/firebase.ts
 
 import auth from '@react-native-firebase/auth';
-// ⚠️ IMPORTANT: Import 'firestore' instead of 'database'
 import firestore from '@react-native-firebase/firestore';
 
-// ----------------------------------------------------------------------
-// 1. Private Utility: Saves the complete profile to Firestore
-//    (Used during signup to store username and initialize the discovered list)
-// ----------------------------------------------------------------------
-async function saveUserProfile(uid: string, email: string, username: string) {
-    // 🔥 New Firestore syntax: Reference the 'users' collection and a document by UID
-    const userDocRef = firestore().collection('users').doc(uid);
+/**
+ * Creates a new user in Auth AND saves their profile to Firestore.
+ */
+export async function signupWithEmail(email, password, username, gender) {
+    try {
+        // 1. Create the secure account (Authentication)
+        const userCredential = await auth().createUserWithEmailAndPassword(email, password);
+        const user = userCredential.user;
 
-    const profileData = {
-        uid: uid,
-        email: email,
-        username: username, // Stored for display purposes
-        discovered: [],
-        createdAt: firestore.FieldValue.serverTimestamp(), // Firestore way to get server time
-    };
+        // 2. Prepare the data
+        const userProfile = {
+            uid: user.uid,
+            email: user.email,
+            username: username || "Trainer",
+            gender: gender || "Not Specified",
+            discovered: [],
+            createdAt: firestore.FieldValue.serverTimestamp(),
+        };
 
-    // Use .set() to create the document
-    await userDocRef.set(profileData);
-    return profileData;
-}
+        // 3. Write to Firestore Database (This is the step that was missing!)
+        await firestore().collection('users').doc(user.uid).set(userProfile);
 
-
-// ----------------------------------------------------------------------
-// 2. Private Utility: Fetches the complete profile from Firestore
-//    (Used after both login and signup to get the username and discovered list)
-// ----------------------------------------------------------------------
-async function fetchUserProfile(uid: string) {
-    // 🔥 New Firestore syntax: Get the document
-    const snapshot = await firestore().collection('users').doc(uid).get();
-
-    if (snapshot.exists) {
-        // .data() returns the document fields
-        return snapshot.data();
-    } else {
-        throw new Error("User profile not found in database.");
+        return userProfile;
+    } catch (error) {
+        console.error("Signup Error:", error);
+        throw error;
     }
 }
 
-
-// ----------------------------------------------------------------------
-// 3. Exported Function: Handles SIGNUP
-// ----------------------------------------------------------------------
-export async function signupWithEmail(email: string, password: string, username: string) {
+/**
+ * Logs the user in and retrieves their profile from Firestore.
+ */
+export async function loginWithEmail(email, password) {
     try {
-        // ... (Auth logic remains the same)
-        const response = await auth().createUserWithEmailAndPassword(email, password);
-        const uid = response.user.uid;
+        // 1. Login
+        const userCredential = await auth().signInWithEmailAndPassword(email, password);
+        const uid = userCredential.user.uid;
 
-        // STEP 2: Save the full profile using the new Firestore function
-        const profile = await saveUserProfile(uid, email, username);
+        // 2. Fetch Profile from Database
+        const userDoc = await firestore().collection('users').doc(uid).get();
 
-        return profile;
+        if (!userDoc.exists) {
+            // Optional: Auto-create profile if missing (fallback)
+            throw new Error("User profile not found in database.");
+        }
+
+        return userDoc.data();
     } catch (error) {
-        console.error("Firebase Signup Error:", error);
-        throw new Error('Signup failed. Email may already be in use.');
-    }
-}
-
-
-// ----------------------------------------------------------------------
-// 4. Exported Function: Handles LOGIN
-// ----------------------------------------------------------------------
-export async function loginWithEmail(email: string, password: string) {
-    try {
-        // ... (Auth logic remains the same)
-        const response = await auth().signInWithEmailAndPassword(email, password);
-        const uid = response.user.uid;
-
-        // STEP 2: Fetch the custom user profile data using the new Firestore function
-        const profile = await fetchUserProfile(uid);
-
-        return profile;
-    } catch (error) {
-        console.error("Firebase Login Error:", error);
-        throw new Error('Authentication failed. Check your email and password.');
+        console.error("Login Error:", error);
+        throw error;
     }
 }
