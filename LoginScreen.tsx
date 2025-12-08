@@ -71,12 +71,14 @@ const LoginScreen = () => {
     <View style={styles.container}>
       {/* Video Background */}
       <Video
-        source={require('../assets/background-video.mp4')}
+        source={require('./assets/pokemon-background.mp4')}
         style={styles.backgroundVideo}
         resizeMode="cover"
         repeat={true}
         muted={true}
         paused={false}
+        playWhenInactive={false}
+        playInBackground={false}
       />
 
       <KeyboardAvoidingView
@@ -88,13 +90,13 @@ const LoginScreen = () => {
 
           {/* Username Input */}
           <ImageBackground
-            source={require('../assets/inputs-Sheet.png')} // Your blue pokeball input
+            source={require('./assets/inputs-Sheet.png')}
             style={styles.inputBackground}
             resizeMode="stretch">
             <TextInput
               style={styles.input}
               placeholder="Username"
-              placeholderTextColor="#rgba(255,255,255,0.6)"
+              placeholderTextColor="rgba(255,255,255,0.6)"
               value={userName}
               onChangeText={setUserName}
               autoCapitalize="none"
@@ -104,7 +106,7 @@ const LoginScreen = () => {
 
           {/* Email Input */}
           <ImageBackground
-            source={require('../assets/inputs-Sheet.png')} // Your blue pokeball input (same image)
+            source={require('./assets/inputs-Sheet.png')}
             style={styles.inputBackground}
             resizeMode="stretch">
             <TextInput
@@ -125,7 +127,7 @@ const LoginScreen = () => {
             disabled={loading}
             activeOpacity={0.8}>
             <ImageBackground
-              source={require('../assets/login button-Sheet.png')} // Your orange/yellow button
+              source={require('./assets/login button-Sheet.png')}
               style={styles.button}
               resizeMode="stretch">
               {loading ? (
@@ -156,12 +158,13 @@ const styles = StyleSheet.create({
     left: 0,
     bottom: 0,
     right: 0,
+    backgroundColor: '#1a472a', // Pokémon green background as fallback
   },
   overlay: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.1)', // Slight overlay for readability
+    backgroundColor: 'rgba(0, 0, 0, 0.1)',
   },
   loginBox: {
     width: '85%',
@@ -177,25 +180,22 @@ const styles = StyleSheet.create({
     textShadowRadius: 4,
     marginBottom: 60,
     letterSpacing: 4,
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '100%',
-    marginBottom: 20,
+    fontFamily: 'VT323-Regular',
   },
   inputBackground: {
     width: '90%',
     height: 55,
     justifyContent: 'center',
     alignSelf: 'center',
+    marginBottom: 20,
   },
   input: {
     flex: 1,
-    paddingHorizontal: 50, // Space for pokeball icon on left
+    paddingHorizontal: 50,
     fontSize: 16,
     color: '#fff',
     fontWeight: '500',
+    fontFamily: 'VT323-Regular',
   },
   button: {
     width: 200,
@@ -205,17 +205,10 @@ const styles = StyleSheet.create({
     marginTop: 30,
   },
   buttonText: {
-    color: '#8B4513', // Dark brown for orange button
+    color: '#8B4513',
     fontSize: 20,
     fontWeight: 'bold',
-  },
-  pikachu: {
-    width: 120,
-    height: 120,
-    position: 'absolute',
-    bottom: 80,
-    right: 20,
-    resizeMode: 'contain',
+    fontFamily: 'VT323-Regular',
   },
   signupLink: {
     marginTop: 30,
@@ -226,6 +219,7 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0, 0, 0, 0.5)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
+    fontFamily: 'VT323-Regular',
   },
 });
 
