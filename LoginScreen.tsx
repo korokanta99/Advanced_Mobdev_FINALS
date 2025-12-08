@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,65 +11,54 @@ import {
   Platform,
   ImageBackground,
 } from 'react-native';
-import firestore from '@react-native-firebase/firestore';
+// 1. REMOVED: import firestore... (We use Redux now)
 import Video from 'react-native-video';
 
-const LoginScreen = () => {
-  const [userName, setUserName] = useState('');
-  const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(false);
+// 2. NEW: Import Redux hooks and your Thunk
+import { useDispatch, useSelector } from 'react-redux';
+import { loginUser } from './src/store/userSlice'; // Check this path!
 
-  const handleLogin = async () => {
-    // Input validation
-    if (!userName.trim() || !email.trim()) {
-      Alert.alert('Error', 'Please enter both username and email');
+const LoginScreen = ({ navigation }) => {
+  const dispatch = useDispatch();
+
+  // 3. Get state from Redux
+  const { isLoading, error, profile } = useSelector((state) => state.user);
+
+  // 4. CHANGED: State to match secure Auth (Email & Password)
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  // Listener: Navigate/Alert when login succeeds
+  useEffect(() => {
+    if (profile) {
+      Alert.alert('Success', `Logged in as ${profile.email}`);
+      // navigation.replace('Home'); // Uncomment this when you are ready to go to the main app
+    }
+  }, [profile]);
+
+  // Listener: Show error if login fails
+  useEffect(() => {
+    if (error) {
+      Alert.alert('Login Failed', error);
+    }
+  }, [error]);
+
+  const handleLogin = () => {
+    if (!email.trim() || !password.trim()) {
+      Alert.alert('Error', 'Please enter both email and password');
       return;
     }
+    // 5. CONNECTED: Dispatch the secure login action
+    dispatch(loginUser({ email, password }));
+  };
 
-    setLoading(true);
-
-    try {
-      // Query Firestore for user with matching username
-      const userSnapshot = await firestore()
-        .collection('users')
-        .where('userName', '==', userName)
-        .limit(1)
-        .get();
-
-      if (userSnapshot.empty) {
-        Alert.alert('Login Failed', 'Invalid username or email');
-        setLoading(false);
-        return;
-      }
-
-      // Get the user document
-      const userDoc = userSnapshot.docs[0];
-      const userData = userDoc.data();
-
-      // Check if email matches
-      if (userData.email === email) {
-        Alert.alert('Success', `Welcome back, ${userData.userName}!`);
-        
-        // Navigate to your main app screen
-        // navigation.navigate('Home', { userId: userDoc.id, userData });
-        
-        // Clear inputs
-        setUserName('');
-        setEmail('');
-      } else {
-        Alert.alert('Login Failed', 'Invalid username or email');
-      }
-    } catch (error) {
-      console.error('Login error:', error);
-      Alert.alert('Error', 'An error occurred during login. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+  const handleRegistrationNavigation = () => {
+    navigation.navigate('Register');
   };
 
   return (
     <View style={styles.container}>
-      {/* Video Background */}
+      {/* Video Background - Kept as requested since it works for you */}
       <Video
         source={require('./assets/pokemon-background.mp4')}
         style={styles.backgroundVideo}
@@ -85,26 +74,9 @@ const LoginScreen = () => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.overlay}>
         <View style={styles.loginBox}>
-          {/* Title */}
           <Text style={styles.title}>LOGIN</Text>
 
-          {/* Username Input */}
-          <ImageBackground
-            source={require('./assets/inputs-Sheet.png')}
-            style={styles.inputBackground}
-            resizeMode="stretch">
-            <TextInput
-              style={styles.input}
-              placeholder="Username"
-              placeholderTextColor="rgba(255,255,255,0.6)"
-              value={userName}
-              onChangeText={setUserName}
-              autoCapitalize="none"
-              editable={!loading}
-            />
-          </ImageBackground>
-
-          {/* Email Input */}
+          {/* INPUT 1: Email (Changed from Username) */}
           <ImageBackground
             source={require('./assets/inputs-Sheet.png')}
             style={styles.inputBackground}
@@ -117,20 +89,37 @@ const LoginScreen = () => {
               onChangeText={setEmail}
               autoCapitalize="none"
               keyboardType="email-address"
-              editable={!loading}
+              editable={!isLoading}
+            />
+          </ImageBackground>
+
+          {/* INPUT 2: Password (Changed from Email) */}
+          <ImageBackground
+            source={require('./assets/inputs-Sheet.png')}
+            style={styles.inputBackground}
+            resizeMode="stretch">
+            <TextInput
+              style={styles.input}
+              placeholder="Password"
+              placeholderTextColor="rgba(255,255,255,0.6)"
+              value={password}
+              onChangeText={setPassword}
+              autoCapitalize="none"
+              secureTextEntry={true} // Hidden text for password
+              editable={!isLoading}
             />
           </ImageBackground>
 
           {/* Login Button */}
           <TouchableOpacity
             onPress={handleLogin}
-            disabled={loading}
+            disabled={isLoading}
             activeOpacity={0.8}>
             <ImageBackground
               source={require('./assets/login button-Sheet.png')}
               style={styles.button}
               resizeMode="stretch">
-              {loading ? (
+              {isLoading ? (
                 <ActivityIndicator color="#8B4513" />
               ) : (
                 <Text style={styles.buttonText}>LOGIN</Text>
@@ -139,7 +128,9 @@ const LoginScreen = () => {
           </TouchableOpacity>
 
           {/* Don't have an account */}
-          <TouchableOpacity style={styles.signupLink}>
+          <TouchableOpacity
+            style={styles.signupLink}
+            onPress={handleRegistrationNavigation}>
             <Text style={styles.signupText}>Don't Have An Account?</Text>
           </TouchableOpacity>
         </View>
@@ -158,7 +149,7 @@ const styles = StyleSheet.create({
     left: 0,
     bottom: 0,
     right: 0,
-    backgroundColor: '#1a472a', // Pokémon green background as fallback
+    backgroundColor: '#1a472a',
   },
   overlay: {
     flex: 1,
