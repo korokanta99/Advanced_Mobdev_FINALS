@@ -8,24 +8,31 @@ import firestore from '@react-native-firebase/firestore';
  */
 export async function signupWithEmail(email, password, username, gender) {
     try {
-        // 1. Create the secure account (Authentication)
+        // 1. Create the secure account
         const userCredential = await auth().createUserWithEmailAndPassword(email, password);
         const user = userCredential.user;
 
-        // 2. Prepare the data
-        const userProfile = {
+        // 2. Prepare the base profile data
+        const baseProfile = {
             uid: user.uid,
             email: user.email,
             username: username || "Trainer",
             gender: gender || "Not Specified",
             discovered: [],
-            createdAt: firestore.FieldValue.serverTimestamp(),
         };
 
-        // 3. Write to Firestore Database (This is the step that was missing!)
-        await firestore().collection('users').doc(user.uid).set(userProfile);
+        // 3. Write to Firestore (Use Server Timestamp for accuracy)
+        await firestore().collection('users').doc(user.uid).set({
+            ...baseProfile,
+            createdAt: firestore.FieldValue.serverTimestamp(), // 👈 Database gets the complex object
+        });
 
-        return userProfile;
+        // 4. Return to Redux (Use simple String to prevent crash)
+        return {
+            ...baseProfile,
+            createdAt: new Date().toISOString(), // 👈 Redux gets a simple string
+        };
+
     } catch (error) {
         console.error("Signup Error:", error);
         throw error;
@@ -45,11 +52,19 @@ export async function loginWithEmail(email, password) {
         const userDoc = await firestore().collection('users').doc(uid).get();
 
         if (!userDoc.exists) {
-            // Optional: Auto-create profile if missing (fallback)
             throw new Error("User profile not found in database.");
         }
 
-        return userDoc.data();
+        const userData = userDoc.data();
+
+        // 🛑 CRITICAL FIX: Convert Firestore Timestamp to String before returning
+        return {
+            ...userData,
+            createdAt: userData.createdAt && userData.createdAt.toDate
+                ? userData.createdAt.toDate().toISOString() // Convert Timestamp to String
+                : new Date().toISOString() // Fallback
+        };
+
     } catch (error) {
         console.error("Login Error:", error);
         throw error;

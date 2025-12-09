@@ -73,7 +73,6 @@ const RegisterScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      {/* 🟢 VIDEO RESTORED: This should play your background now */}
       <Video
         source={require('./assets/pokemon-background.mp4')}
         style={styles.backgroundVideo}

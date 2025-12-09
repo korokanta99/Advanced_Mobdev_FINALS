@@ -1,3 +1,5 @@
+// src/api/pokeapi.ts
+
 const API_URL = "https://pokeapi.co/api/v2";
 
 export async function getPokemonById(id: number) {
@@ -20,13 +22,22 @@ export async function searchPokemon(name: string) {
   }
 }
 
-export async function getPokemonList(offset = 0, limit = 151) { // Limit to 151 or 200 for initial scope
+export async function getPokemonList(offset = 0, limit = 151) {
   try {
-    // Fetch a paginated list of Pokemon
+    // 1. Fetch the list of names
     const res = await fetch(`${API_URL}/pokemon?offset=${offset}&limit=${limit}`);
     const data = await res.json();
-    // You might need a second step to fetch full details for each Pokemon in the list
-    return data.results;
+
+    // 2. CRITICAL STEP: Fetch full details (ID & Image) for each item
+    // Without this, 'item.id' is undefined and the Pokedex stays empty.
+    const detailedList = await Promise.all(
+      data.results.map(async (item: any) => {
+        const detailsResponse = await fetch(item.url);
+        return await detailsResponse.json();
+      })
+    );
+
+    return detailedList;
   } catch (err) {
     console.error("Error fetching Pokémon list:", err);
     throw err;

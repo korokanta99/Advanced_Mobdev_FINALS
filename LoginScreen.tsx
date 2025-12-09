@@ -11,30 +11,28 @@ import {
   Platform,
   ImageBackground,
 } from 'react-native';
-// 1. REMOVED: import firestore... (We use Redux now)
 import Video from 'react-native-video';
 
-// 2. NEW: Import Redux hooks and your Thunk
+// Redux hooks
 import { useDispatch, useSelector } from 'react-redux';
-import { loginUser } from './src/store/userSlice'; // Check this path!
+import { loginUser } from './src/store/userSlice';
 
 const LoginScreen = ({ navigation }) => {
   const dispatch = useDispatch();
 
-  // 3. Get state from Redux
+  // Get state from Redux
   const { isLoading, error, profile } = useSelector((state) => state.user);
 
-  // 4. CHANGED: State to match secure Auth (Email & Password)
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  // Listener: Navigate/Alert when login succeeds
+  // 🟢 CHANGED: Navigate to 'Home' (PokedexScreen) on success
   useEffect(() => {
     if (profile) {
-      Alert.alert('Success', `Logged in as ${profile.email}`);
-      // navigation.replace('Home'); // Uncomment this when you are ready to go to the main app
+      // Use 'replace' so they can't go back to login
+      navigation.replace('Home');
     }
-  }, [profile]);
+  }, [profile, navigation]);
 
   // Listener: Show error if login fails
   useEffect(() => {
@@ -48,17 +46,11 @@ const LoginScreen = ({ navigation }) => {
       Alert.alert('Error', 'Please enter both email and password');
       return;
     }
-    // 5. CONNECTED: Dispatch the secure login action
     dispatch(loginUser({ email, password }));
-  };
-
-  const handleRegistrationNavigation = () => {
-    navigation.navigate('Register');
   };
 
   return (
     <View style={styles.container}>
-      {/* Video Background - Kept as requested since it works for you */}
       <Video
         source={require('./assets/pokemon-background.mp4')}
         style={styles.backgroundVideo}
@@ -76,7 +68,7 @@ const LoginScreen = ({ navigation }) => {
         <View style={styles.loginBox}>
           <Text style={styles.title}>LOGIN</Text>
 
-          {/* INPUT 1: Email (Changed from Username) */}
+          {/* Email Input */}
           <ImageBackground
             source={require('./assets/inputs-Sheet.png')}
             style={styles.inputBackground}
@@ -93,7 +85,7 @@ const LoginScreen = ({ navigation }) => {
             />
           </ImageBackground>
 
-          {/* INPUT 2: Password (Changed from Email) */}
+          {/* Password Input */}
           <ImageBackground
             source={require('./assets/inputs-Sheet.png')}
             style={styles.inputBackground}
@@ -105,7 +97,7 @@ const LoginScreen = ({ navigation }) => {
               value={password}
               onChangeText={setPassword}
               autoCapitalize="none"
-              secureTextEntry={true} // Hidden text for password
+              secureTextEntry={true}
               editable={!isLoading}
             />
           </ImageBackground>
@@ -127,10 +119,10 @@ const LoginScreen = ({ navigation }) => {
             </ImageBackground>
           </TouchableOpacity>
 
-          {/* Don't have an account */}
+          {/* Register Link */}
           <TouchableOpacity
             style={styles.signupLink}
-            onPress={handleRegistrationNavigation}>
+            onPress={() => navigation.navigate('Register')}>
             <Text style={styles.signupText}>Don't Have An Account?</Text>
           </TouchableOpacity>
         </View>
