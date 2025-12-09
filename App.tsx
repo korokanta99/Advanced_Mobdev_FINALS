@@ -6,14 +6,15 @@ import { store } from './src/store';
 // 2. Navigation Imports
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-
-// 🛑 3. NEW IMPORT: Required to fix the Black Screen
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-// 4. Screen Imports
+import { enableScreens } from 'react-native-screens';
+enableScreens(false); // <--- THIS LINE STOPS THE CRASH
+
+// 3. Screen Imports
 import LoginScreen from './LoginScreen';
 import RegisterScreen from './RegisterScreen';
-// import PokedexScreen from './PokedexScreen';
+import PokedexScreen from './PokedexScreen';
 
 const Stack = createStackNavigator();
 
@@ -24,7 +25,7 @@ const AuthStack = () => (
   >
     <Stack.Screen name="Login" component={LoginScreen} />
     <Stack.Screen name="Register" component={RegisterScreen} />
-    {/* <Stack.Screen name="Home" component={PokedexScreen} /> */}
+    <Stack.Screen name="Home" component={PokedexScreen} />
   </Stack.Navigator>
 );
 

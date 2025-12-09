@@ -1,3 +1,5 @@
+// src/store/pokemonSlice.ts
+
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { getPokemonList } from "../api/pokeapi";
 import { cacheData, getCachedData } from "../utils/cache";
@@ -6,17 +8,20 @@ import { cacheData, getCachedData } from "../utils/cache";
 export const fetchPokemon = createAsyncThunk(
   "pokemon/fetchPokemon",
   async (_, { rejectWithValue }) => {
-    // Check cache first
-    const cachedList = await getCachedData("pokemonList");
+    // 🛑 KEY UPDATED: Use "pokemonList_v2" to force a fresh download
+    const cachedList = await getCachedData("pokemonList_v2");
+
     if (cachedList) {
+      console.log("Loaded Pokemon from cache");
       return cachedList;
     }
 
-    // If not in cache, fetch from API
+    console.log("Fetching Pokemon from API...");
+    // If not in cache, fetch from API (now gets full details)
     const data = await getPokemonList(0, 151);
 
-    // Cache the fresh data
-    await cacheData("pokemonList", data);
+    // Cache the fresh data with the new key
+    await cacheData("pokemonList_v2", data);
 
     return data;
   }
@@ -24,7 +29,6 @@ export const fetchPokemon = createAsyncThunk(
 
 // 2. The Slice
 const pokemonSlice = createSlice({
-  // 🛑 FIX: This 'name' property was missing!
   name: "pokemon",
 
   initialState: {
@@ -34,7 +38,6 @@ const pokemonSlice = createSlice({
     error: null,
   },
   reducers: {
-    // Basic reducers (if you had any synchronous ones) can go here
     setPokemonList(state, action) {
         state.list = action.payload;
     },
@@ -59,6 +62,5 @@ const pokemonSlice = createSlice({
   },
 });
 
-// Export actions and reducer
 export const { setPokemonList, addFavorite } = pokemonSlice.actions;
 export default pokemonSlice.reducer;

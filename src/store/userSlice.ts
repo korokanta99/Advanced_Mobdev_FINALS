@@ -46,10 +46,9 @@ export const loginUser = createAsyncThunk<UserProfileData, any, { rejectValue: s
 // Thunk for Signup
 export const signupUser = createAsyncThunk<UserProfileData, any, { rejectValue: string }>(
     "user/signupUser",
-    // 🛑 FIX: Added 'gender' to the destructuring so it doesn't get lost
+
     async ({ email, password, username, gender }: any, { rejectWithValue }) => {
         try {
-            // 🛑 FIX: Pass 'gender' to the API function
             return await signupWithEmail(email, password, username, gender);
         } catch (error) {
             return rejectWithValue(error instanceof Error ? error.message : "Signup failed.");
