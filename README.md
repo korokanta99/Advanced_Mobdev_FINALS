@@ -9,8 +9,13 @@ node version: v20.19.6
 # Procedure:
 
 1. Install dependencies
-- npm install
-
+```
+npm install
+npm install @react-native-firebase/auth
+npm install @react-native-firebase/firestore
+npm install @react-native-firebase/app
+npm install @react-native-firebase/database
+```
 2. Start metro server
 'npm start'
 

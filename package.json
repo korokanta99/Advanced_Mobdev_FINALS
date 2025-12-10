@@ -10,7 +10,6 @@
     "test": "jest"
   },
   "dependencies": {
-    "20": "^3.1.9",
     "@react-native-async-storage/async-storage": "^1.24.0",
     "@react-native-firebase/app": "^23.5.0",
     "@react-native-firebase/auth": "^23.5.0",
