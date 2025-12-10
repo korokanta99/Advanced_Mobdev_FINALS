@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,58 +7,120 @@ import {
   SafeAreaView,
   Image,
   ScrollView,
+  TextInput,
+  Alert
 } from 'react-native';
 
-// --- Assets ---
-// MAKE SURE 'pixel-arrow.png' IS IN YOUR assets FOLDER
-const PIXEL_BACK_ARROW = require('./assets/back-Sheet.png');
+import { useDispatch, useSelector } from 'react-redux';
+import { logoutUser, updateProfile } from './src/store/userSlice';
 
-// Other assets (keep these as they were)
+// --- Assets ---
+const PIXEL_BACK_ARROW = require('./assets/back-Sheet.png');
 const POKEBALL_ICON = require('./assets/pokeball-Sheet.png');
-const TRAINER_SPRITE_SMALL = require('./assets/profileimg.png');
-const TRAINER_SPRITE_LARGE = require('./assets/profileimg2.png');
-const RED_POKEBALL = require('./assets/pokeball-Sheet.png');
 const ORANGE_POKEBALL = require('./assets/pokeball-Sheet.png');
 
 const ProfileScreen = ({ navigation }: { navigation: any }) => {
-  
-  const userProfile = {
-    username: 'Carl Buena',
-    email: 'Carl@gmail.com',
+  const dispatch = useDispatch();
+  const { profile } = useSelector((state: any) => state.user);
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [username, setUsername] = useState(profile?.username || '');
+  const [email, setEmail] = useState(profile?.email || '');
+
+  // 🟢 DETERMINE GENDER & SELECT SPRITES
+  const gender = profile?.gender || '';
+  const isFemale = gender.toLowerCase() === 'female';
+
+  const smallSprite = isFemale
+    ? require('./assets/profileimgM.png')
+    : require('./assets/profileimg.png');
+
+  const largeSprite = isFemale
+    ? require('./assets/profileimgM2.png')
+    : require('./assets/profileimg2.png');
+
+  const scannedCount = profile?.discovered ? profile.discovered.length : 0;
+
+  const handleSignOut = () => {
+    Alert.alert("Sign Out", "Are you sure you want to log out?", [
+        { text: "Cancel", style: "cancel" },
+        {
+            text: "Log Out",
+            style: "destructive",
+            onPress: async () => {
+                // 1. Clear Data
+                // @ts-ignore
+                await dispatch(logoutUser());
+
+                // 2. Force Navigation to Login
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'Login' }],
+                });
+            }
+        }
+    ]);
   };
-  const scannedCount = 151;
+
+  const toggleEdit = () => {
+    if (isEditing) {
+        if (profile && profile.uid) {
+            if (username !== profile.username || email !== profile.email) {
+                // @ts-ignore
+                dispatch(updateProfile({
+                    uid: profile.uid,
+                    data: { username, email }
+                }));
+                Alert.alert("Success", "Profile updated successfully!");
+            }
+        }
+    }
+    setIsEditing(!isEditing);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        
-        {/* Header */}
+
+        {/* Header - Goes to Pokedex */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation?.goBack()} style={styles.backButton}>
-             {/*Replaced Text with Image */}
+          <TouchableOpacity onPress={() => navigation.navigate('Home')} style={styles.backButton}>
             <Image source={PIXEL_BACK_ARROW} style={styles.backArrowImage} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Profile</Text>
         </View>
 
         <View style={styles.profileContent}>
-
-          {/* Left Side: Info Boxes */}
           <View style={styles.leftColumn}>
-            
-            {/* Name Box */}
             <View style={styles.retroBox}>
-              <Text style={styles.boxText}>{userProfile.username}</Text>
+              {isEditing ? (
+                  <TextInput
+                    value={username}
+                    onChangeText={setUsername}
+                    style={styles.editInput}
+                    autoCapitalize="none"
+                  />
+              ) : (
+                  <Text style={styles.boxText}>{username || 'Trainer'}</Text>
+              )}
               <View style={styles.accentBar} />
             </View>
 
-            {/* Email Box */}
             <View style={styles.retroBox}>
-              <Text style={styles.boxText}>{userProfile.email}</Text>
+               {isEditing ? (
+                  <TextInput
+                    value={email}
+                    onChangeText={setEmail}
+                    style={styles.editInput}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                  />
+              ) : (
+                  <Text style={styles.boxText}>{email || 'No Email'}</Text>
+              )}
               <View style={styles.accentBar} />
             </View>
 
-            {/* Scanned Count */}
             <View style={styles.scannedSection}>
               <Text style={styles.scannedLabel}>Scanned#</Text>
               <View style={styles.scannedRow}>
@@ -68,25 +130,22 @@ const ProfileScreen = ({ navigation }: { navigation: any }) => {
             </View>
           </View>
 
-          {/* Sprites (Absolute Positioning) */}
-          <Image source={TRAINER_SPRITE_SMALL} style={styles.spriteSmall} />
-     
-          <Image source={TRAINER_SPRITE_LARGE} style={styles.spriteLarge} />
+          {/* 🟢 DYNAMIC SPRITES */}
+          <Image source={smallSprite} style={styles.spriteSmall} />
+          <Image source={largeSprite} style={styles.spriteLarge} />
           <Image source={ORANGE_POKEBALL} style={styles.spriteLargeBall} />
 
-          {/* Action Buttons */}
           <View style={styles.actionButtonContainer}>
-            <TouchableOpacity style={styles.retroButton}>
-              <Text style={styles.buttonText}>EDIT</Text>
+            <TouchableOpacity style={styles.retroButton} onPress={toggleEdit}>
+              <Text style={styles.buttonText}>{isEditing ? "SAVE" : "EDIT"}</Text>
               <View style={styles.accentBarButton} />
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.retroButton}>
+            <TouchableOpacity style={styles.retroButton} onPress={handleSignOut}>
               <Text style={styles.buttonText}>SIGN OUT</Text>
               <View style={styles.accentBarButton} />
             </TouchableOpacity>
           </View>
-
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -103,6 +162,7 @@ const COLORS = {
   border: '#2A2A2A',
   white: '#FFFFFF',
   black: '#000000',
+  editBg: 'rgba(0,0,0,0.1)'
 };
 
 const styles = StyleSheet.create({
@@ -114,8 +174,6 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingBottom: 20,
   },
-  
-  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -126,12 +184,11 @@ const styles = StyleSheet.create({
   backButton: {
     marginRight: 15,
     justifyContent: 'center',
-    height: 40, 
+    height: 40,
     width: 40,
   },
-  // New style for the image arrow
   backArrowImage: {
-    width: 35, 
+    width: 35,
     height: 35,
     resizeMode: 'contain',
   },
@@ -143,8 +200,6 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 2, height: 2 },
     textShadowRadius: 1,
   },
-
-  // Main Layout
   profileContent: {
     flex: 1,
     position: 'relative',
@@ -155,8 +210,6 @@ const styles = StyleSheet.create({
     width: '55%',
     zIndex: 10,
   },
-
-  // Retro Boxes
   retroBox: {
     backgroundColor: COLORS.boxBg,
     borderWidth: 2,
@@ -174,14 +227,20 @@ const styles = StyleSheet.create({
     fontSize: 22,
     marginBottom: 4,
   },
+  editInput: {
+    color: COLORS.white,
+    fontFamily: PIXEL_FONT,
+    fontSize: 22,
+    marginBottom: 4,
+    backgroundColor: COLORS.editBg,
+    paddingHorizontal: 5,
+  },
   accentBar: {
     height: 4,
     backgroundColor: COLORS.accent,
     width: '100%',
     borderRadius: 2,
   },
-
-  // Scanned Section
   scannedSection: {
     marginTop: 5,
   },
@@ -208,22 +267,12 @@ const styles = StyleSheet.create({
     color: COLORS.black,
     fontWeight: 'bold',
   },
-
-  // Sprites
   spriteSmall: {
     position: 'absolute',
     top: 20,
     right: 30,
     width: 100,
     height: 120,
-    resizeMode: 'contain',
-  },
-  spriteFloatingBall: {
-    position: 'absolute',
-    top: 180,
-    right: 50,
-    width: 40,
-    height: 40,
     resizeMode: 'contain',
   },
   spriteLarge: {
@@ -244,8 +293,6 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
     zIndex: 0,
   },
-
-  // Bottom Buttons
   actionButtonContainer: {
     position: 'absolute',
     bottom: 30,

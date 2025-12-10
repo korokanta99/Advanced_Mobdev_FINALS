@@ -1,52 +1,42 @@
-// src/store/userSlice.ts
-
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-// **IMPORTANT:** Ensure these functions are implemented in src/api/firebase.ts
-import { loginWithEmail, signupWithEmail } from "../api/firebase"; 
+// 🟢 IMPORT signOutUser
+import { loginWithEmail, signupWithEmail, updateUserDoc, signOutUser } from "../api/firebase";
 
-// 1. Define Interfaces for Type Safety
-// The structure of the full profile data returned from your firebase.ts functions
 interface UserProfileData {
     uid: string;
     email: string;
-    username: string; // From the database profile
-    discovered: string[]; 
+    username: string;
+    discovered: string[];
+    gender?: string; // Added gender to interface
 }
 
-// Interface for the overall user state in Redux
 interface UserProfileState {
-    profile: UserProfileData | null; // Null if not authenticated
-    isLoading: boolean;   // Tracks state of login/signup operation
-    error: string | null; // Stores any error message
+    profile: UserProfileData | null;
+    isLoading: boolean;
+    error: string | null;
 }
 
-// 2. Initial State
 const initialState: UserProfileState = {
     profile: null,
     isLoading: false,
     error: null,
 };
 
-// 3. Async Thunks (The Sign-In/Sign-Up Logic)
-// These functions call the Firebase API and update state automatically.
+// --- THUNKS ---
 
-// Thunk for Login
-export const loginUser = createAsyncThunk<UserProfileData, any, { rejectValue: string }>(
+export const loginUser = createAsyncThunk(
     "user/loginUser",
     async ({ email, password }: any, { rejectWithValue }) => {
         try {
-            // Calls the function in firebase.ts to authenticate and fetch profile
-            return await loginWithEmail(email, password); 
+            return await loginWithEmail(email, password);
         } catch (error) {
             return rejectWithValue(error instanceof Error ? error.message : "Login failed.");
         }
     }
 );
 
-// Thunk for Signup
-export const signupUser = createAsyncThunk<UserProfileData, any, { rejectValue: string }>(
+export const signupUser = createAsyncThunk(
     "user/signupUser",
-
     async ({ email, password, username, gender }: any, { rejectWithValue }) => {
         try {
             return await signupWithEmail(email, password, username, gender);
@@ -56,8 +46,33 @@ export const signupUser = createAsyncThunk<UserProfileData, any, { rejectValue: 
     }
 );
 
+export const updateProfile = createAsyncThunk(
+    "user/updateProfile",
+    async ({ uid, data }: { uid: string, data: any }, { rejectWithValue }) => {
+        try {
+            await updateUserDoc(uid, data);
+            return data;
+        } catch (error) {
+            return rejectWithValue("Failed to update profile.");
+        }
+    }
+);
 
-// 4. The Redux Slice
+// 🟢 LOGOUT THUNK
+export const logoutUser = createAsyncThunk(
+    "user/logoutUser",
+    async (_, { rejectWithValue }) => {
+        try {
+            await signOutUser();
+            return;
+        } catch (error) {
+            return rejectWithValue("Logout failed.");
+        }
+    }
+);
+
+// --- SLICE ---
+
 const userSlice = createSlice({
     name: "user",
     initialState,
@@ -67,46 +82,43 @@ const userSlice = createSlice({
                 state.profile.discovered.push(action.payload);
             }
         },
-        logout(state) {
-            // Reset state upon logout
+    },
+    extraReducers: (builder) => {
+        // Login
+        builder.addCase(loginUser.fulfilled, (state, action) => {
+            state.isLoading = false;
+            state.profile = action.payload;
+            state.error = null;
+        });
+        builder.addCase(loginUser.rejected, (state, action) => {
+            state.isLoading = false;
+            state.error = action.payload as string;
+        });
+        builder.addCase(loginUser.pending, (state) => { state.isLoading = true; });
+
+        // Signup
+        builder.addCase(signupUser.fulfilled, (state, action) => {
+            state.isLoading = false;
+            state.profile = action.payload;
+            state.error = null;
+        });
+        builder.addCase(signupUser.pending, (state) => { state.isLoading = true; });
+
+        // Update
+        builder.addCase(updateProfile.fulfilled, (state, action) => {
+            if (state.profile) {
+                state.profile = { ...state.profile, ...action.payload };
+            }
+        });
+
+        // 🟢 LOGOUT HANDLER (Clears Data)
+        builder.addCase(logoutUser.fulfilled, (state) => {
             state.profile = null;
             state.isLoading = false;
             state.error = null;
-        }
-    },
-    // 5. Handling Async Thunks (Extra Reducers)
-    extraReducers: (builder) => {
-        builder
-            // Match success for both LOGIN and SIGNUP
-            .addMatcher(
-                (action) => action.type.endsWith('/fulfilled') && action.type.startsWith('user/'),
-                (state, action: PayloadAction<UserProfileData>) => {
-                    state.isLoading = false;
-                    state.profile = action.payload; // Set the full profile on success
-                    state.error = null;
-                }
-            )
-            // Match pending for both LOGIN and SIGNUP
-            .addMatcher(
-                (action) => action.type.endsWith('/pending') && action.type.startsWith('user/'),
-                (state) => {
-                    state.isLoading = true;
-                    state.error = null;
-                }
-            )
-            // Match failure for both LOGIN and SIGNUP
-            .addMatcher(
-                (action) => action.type.endsWith('/rejected') && action.type.startsWith('user/'),
-                (state, action) => {
-                    state.isLoading = false;
-                    state.error = action.payload as string || "An authentication error occurred.";
-                    state.profile = null;
-                }
-            );
+        });
     }
 });
 
-export const { addDiscovered, logout } = userSlice.actions;
-// Export the thunks so Member 2 can use them:
-export { loginUser, signupUser }; 
+export const { addDiscovered } = userSlice.actions;
 export default userSlice.reducer;
