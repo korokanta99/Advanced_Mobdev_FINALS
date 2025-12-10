@@ -11,13 +11,17 @@ node version: v20.19.6
 1. Install dependencies
 ```
 npm install
-npm install @react-native-firebase/auth
-npm install @react-native-firebase/firestore
-npm install @react-native-firebase/app
-npm install @react-native-firebase/database
 ```
 2. Start metro server
 'npm start'
 
 3. Start android emulator
 'npx react-native run-android'
+
+4. Restarting/refreshing emulator
+'''
+killall -9 node
+cd android && ./gradlew clean
+cd ..
+npx react-native run-android
+'''
