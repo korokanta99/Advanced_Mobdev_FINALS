@@ -17,6 +17,7 @@ import {
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchPokemon } from './src/store/pokemonSlice';
 import { useNavigation } from '@react-navigation/native';
+import Voice from '@react-native-voice/voice';
 
 const { width, height } = Dimensions.get('window');
 
@@ -25,25 +26,26 @@ const MOCK_DISCOVERED_IDS = [1, 4, 7, 25, 133, 143, 150];
 
 // --- Components ---
 
-const SearchBar = ({ onSearch }: { onSearch: (text: string) => void }) => {
-  return (
-    <ImageBackground
-      source={require('./assets/search.png')}
-      style={styles.searchBarBackground}
-      resizeMode="stretch"
-    >
-      <View style={styles.searchBarContent}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search captured..."
-          placeholderTextColor="#FFF"
-          onChangeText={onSearch}
-          autoCapitalize="none"
-        />
-      </View>
-    </ImageBackground>
-  );
-};
+// Inside SearchBar component
+const SearchBar = ({ onSearch, onMicPress, isListening }: any) => (
+  <ImageBackground source={require('./assets/search.png')} style={styles.searchBarBackground} resizeMode="stretch">
+    <View style={styles.searchBarContent}>
+      <TextInput
+        style={styles.searchInput}
+        placeholder={isListening ? "Listening..." : "Search captured..."}
+        placeholderTextColor="#FFF"
+        onChangeText={onSearch}
+        value={searchText} // Make sure to pass searchText prop if needed
+      />
+      <TouchableOpacity onPress={onMicPress} style={{ marginRight: 10 }}>
+         <Image 
+           source={require('./assets/mic-Sheet.png')} 
+           style={{ width: 24, height: 24, tintColor: isListening ? 'red' : 'white' }} 
+         />
+      </TouchableOpacity>
+    </View>
+  </ImageBackground>
+);
 
 const PokemonCard = ({ pokemon, onPress }: { pokemon: any, onPress: () => void }) => {
   const imageUrl = pokemon.sprites?.other?.['official-artwork']?.front_default
@@ -191,6 +193,30 @@ const PokedexScreen = () => {
     ? require('./assets/profileM.png')
     : require('./assets/profile.png');
 
+  //Voice Listening
+  const [isListening, setIsListening] = useState(false);
+
+  useEffect(() => {
+  Voice.onSpeechResults = (e: any) => {
+    if (e.value && e.value[0]) {
+      setSearchText(e.value[0]);
+      setIsListening(false);
+    }
+  };
+  return () => {
+    Voice.destroy().then(Voice.removeAllListeners);
+    };
+  }, []);
+
+  const startVoiceSearch = async () => {
+    try {
+      setIsListening(true);
+      await Voice.start('en-US');
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   // Hardware Back Button
   useEffect(() => {
     const backAction = () => {
@@ -231,8 +257,8 @@ const PokedexScreen = () => {
   };
 
   const goToCommunity = () => navigation.navigate('Community');
-  const goToMap = () => Alert.alert('Navigation', 'Go to Map Screen');
-  const startScan = () => Alert.alert('Action', 'Starting Scan...');
+  const goToMap = () => navigation.navigate('Map');
+  const startScan = () => navigation.navigate('Scan');
 
   return (
     <View style={styles.container}>

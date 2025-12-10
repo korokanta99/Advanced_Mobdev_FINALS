@@ -12,6 +12,8 @@ import RegisterScreen from './RegisterScreen';
 import ProfileScreen from './ProfileScreen';
 import PokedexScreen from './PokedexScreen';
 import CommunityScreen from './CommunityScreen';
+import MapScreen from './MapScreen';
+import ScanScreen from './ScanScreen';
 
 const Stack = createStackNavigator();
 
@@ -26,6 +28,8 @@ const AuthStack = () => (
     {/* 🛑 FIX 2: Add the route named "Home" */}
     <Stack.Screen name="Home" component={PokedexScreen} />
     <Stack.Screen name="Community" component={CommunityScreen} />
+    <Stack.Screen name="Map" component={MapScreen} />
+    <Stack.Screen name="Scan" component={ScanScreen} options={{ headerShown: false }} />
   </Stack.Navigator>
 );
 
