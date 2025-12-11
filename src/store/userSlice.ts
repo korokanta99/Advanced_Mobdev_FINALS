@@ -1,11 +1,14 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { loginWithEmail, signupWithEmail, updateUserDoc, signOutUser, saveCapturedPokemon } from "../api/firebase";
+// 🟢 Import Firestore directly for the profile update logic
+import firestore from '@react-native-firebase/firestore';
 
 interface UserProfileData {
     uid: string;
     email: string;
     username: string;
     gender?: string;
+    discovered?: number[]; // Ensure this matches your DB structure
 }
 
 interface UserState {
@@ -58,7 +61,7 @@ export const logoutUser = createAsyncThunk(
     }
 );
 
-// ✅ NEW: Thunk to capture pokemon and save to DB
+// ✅ CAPTURE POKEMON THUNK
 export const capturePokemon = createAsyncThunk(
     "user/capturePokemon",
     async (pokemonId: number, { getState, rejectWithValue }) => {
@@ -74,6 +77,20 @@ export const capturePokemon = createAsyncThunk(
             return pokemonId;
         } catch (error) {
             return rejectWithValue("Failed to save capture");
+        }
+    }
+);
+
+// 🟢 NEW: UPDATE PROFILE THUNK (This fixes your error)
+export const updateProfile = createAsyncThunk(
+    "user/updateProfile",
+    async ({ uid, data }: { uid: string, data: { username: string, email: string } }, { rejectWithValue }) => {
+        try {
+            // Update Firestore directly
+            await firestore().collection('users').doc(uid).update(data);
+            return data; // Return new data to update local state
+        } catch (error) {
+            return rejectWithValue("Failed to update profile");
         }
     }
 );
@@ -94,7 +111,7 @@ const userSlice = createSlice({
             state.profile = action.payload;
             state.isLoading = false;
             state.error = null;
-            // ✅ LOAD CAUGHT POKEMON FROM DB
+            // LOAD CAUGHT POKEMON FROM DB
             if (action.payload.discovered) {
                 state.caughtPokemonIds = action.payload.discovered;
             }
@@ -118,10 +135,17 @@ const userSlice = createSlice({
             state.caughtPokemonIds = [];
         });
 
-        // ✅ Handle Capture Success
+        // Handle Capture Success
         builder.addCase(capturePokemon.fulfilled, (state, action) => {
             if (!state.caughtPokemonIds.includes(action.payload)) {
                 state.caughtPokemonIds.push(action.payload);
+            }
+        });
+
+        // 🟢 HANDLE PROFILE UPDATE
+        builder.addCase(updateProfile.fulfilled, (state, action) => {
+            if (state.profile) {
+                state.profile = { ...state.profile, ...action.payload };
             }
         });
     }

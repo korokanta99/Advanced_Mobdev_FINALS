@@ -13,10 +13,7 @@ import {
   ScrollView,
 } from 'react-native';
 
-// 1. VIDEO IMPORT (Restored)
 import Video from 'react-native-video';
-
-// 2. REDUX IMPORTS (Backend Logic)
 import { useDispatch, useSelector } from 'react-redux';
 import { signupUser } from './src/store/userSlice';
 
@@ -32,12 +29,14 @@ const RegisterScreen = ({ navigation }) => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [gender, setGender] = useState('');
 
-  // Listener: Success
+  // 🟢 UPDATED LISTENER: Auto-redirect to Home
   useEffect(() => {
     if (profile) {
-      Alert.alert('Success', 'Account created successfully!', [
-        { text: 'Login Now', onPress: () => navigation.navigate('Login') },
-      ]);
+      // Navigate directly to the main app (Home/Pokedex)
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Home' }],
+      });
     }
   }, [profile, navigation]);
 
@@ -67,7 +66,7 @@ const RegisterScreen = ({ navigation }) => {
       return;
     }
 
-    // CONNECTED: Dispatch the Secure Signup Action
+    // Dispatch Signup
     dispatch(signupUser({ email, password, username: userName, gender }));
   };
 

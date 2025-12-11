@@ -7,7 +7,7 @@ import {
   TouchableOpacity, 
   Image, 
   Dimensions, 
-  PermissionsAndroid, 
+  PermissionsAndroid,
   Platform,
   ActivityIndicator
 } from 'react-native';
@@ -25,16 +25,16 @@ const MapScreen = () => {
   const navigation = useNavigation<any>();
   const dispatch = useDispatch();
   const mapRef = useRef<MapView>(null);
-  
+
   // Read wild spawns from Redux
   const { wildSpawns } = useSelector((state: any) => state.pokemon);
-  
+
   const [location, setLocation] = useState<any>(null);
   const [isScanning, setIsScanning] = useState(false);
 
   // ✅ CALCULATE STARTING REGION
   // If we have pokemon, start map THERE. If not, default to California.
-  const initialRegion = wildSpawns.length > 0 
+  const initialRegion = wildSpawns.length > 0
     ? {
         latitude: wildSpawns[0].latitude,
         longitude: wildSpawns[0].longitude,
@@ -42,7 +42,7 @@ const MapScreen = () => {
         longitudeDelta: 0.005,
       }
     : {
-        latitude: 37.78825, 
+        latitude: 37.78825,
         longitude: -122.4324,
         latitudeDelta: 0.005,
         longitudeDelta: 0.005,
@@ -72,7 +72,7 @@ const MapScreen = () => {
     }
 
     setIsScanning(true);
-    
+
     setTimeout(() => {
       const { latitude, longitude } = location;
       const newSpawns = [];
@@ -86,10 +86,10 @@ const MapScreen = () => {
           longitude: longitude + getRandomOffset(),
         });
       }
-      
+
       dispatch(addWildSpawns(newSpawns));
       setIsScanning(false);
-      
+
       mapRef.current?.animateToRegion({
         latitude,
         longitude,
@@ -115,18 +115,18 @@ const MapScreen = () => {
 
   const handleMarkerPress = (pokemon: any) => {
       Alert.alert(
-        "Wild Pokémon Appeared!", 
-        "Do you want to capture it?", 
+        "Wild Pokémon Appeared!",
+        "Do you want to capture it?",
         [
           { text: "Run Away", style: "cancel" },
-          { 
-            text: "Open Camera", 
-            onPress: () => navigation.navigate('Scan', { 
+          {
+            text: "Open Camera",
+            onPress: () => navigation.navigate('Scan', {
               pokemonId: pokemon.id,
               pokemonImage: pokemon.sprite,
               // 👇 NEW: Pass the unique ID so we can delete it later
-              instanceId: pokemon.uniqueKey 
-            }) 
+              instanceId: pokemon.uniqueKey
+            })
           }
         ]
       );
@@ -146,7 +146,7 @@ const MapScreen = () => {
       >
         {wildSpawns.map((poke: any) => (
           <Marker
-            key={poke.uniqueKey} 
+            key={poke.uniqueKey}
             coordinate={{ latitude: poke.latitude, longitude: poke.longitude }}
             onPress={() => handleMarkerPress(poke)}
           >
@@ -157,8 +157,8 @@ const MapScreen = () => {
         ))}
       </MapView>
 
-      <TouchableOpacity 
-        style={styles.scanButton} 
+      <TouchableOpacity
+        style={styles.scanButton}
         onPress={scanForPokemon}
         disabled={isScanning}
       >

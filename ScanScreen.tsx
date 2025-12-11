@@ -1,9 +1,9 @@
 import React, { useEffect } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, Image, Alert, ActivityIndicator } from 'react-native';
-import { 
-  Camera, 
-  useCameraDevice, 
-  useCameraPermission, 
+import {
+  Camera,
+  useCameraDevice,
+  useCameraPermission,
   useCameraFormat // 👈 1. Import this
 } from 'react-native-vision-camera';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -18,12 +18,12 @@ const ScanScreen = () => {
   const route = useRoute();
   const dispatch = useDispatch<any>();
   const { pokemonId, pokemonImage, instanceId } = route.params as any || {};
-  
+
   // 👈 2. Explicitly select a format that supports Photos
   const format = useCameraFormat(device, [
     { photoResolution: 'max' }
   ]);
-  
+
 
   useEffect(() => {
     if (!hasPermission) requestPermission();
@@ -38,7 +38,7 @@ const ScanScreen = () => {
       Alert.alert("Gotcha!", "The Pokémon was added to your Pokedex!", [
         { text: "OK", onPress: () => navigation.navigate('Home') }
       ]);
-      
+
     } else {
         navigation.goBack();
     }
@@ -58,13 +58,13 @@ const ScanScreen = () => {
 
       <View style={styles.overlay}>
         <Text style={styles.arText}>WILD POKEMON FOUND!</Text>
-        
+
         {pokemonImage ? (
              <Image source={{ uri: pokemonImage }} style={styles.pokemonSprite} />
         ) : (
              <Text style={{color: 'white'}}>Scanning...</Text>
         )}
-        
+
         <TouchableOpacity style={styles.captureBtn} onPress={handleCapture}>
            <View style={styles.captureInner} />
         </TouchableOpacity>

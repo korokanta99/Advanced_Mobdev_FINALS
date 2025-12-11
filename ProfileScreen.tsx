@@ -23,7 +23,8 @@ const BACKGROUND_IMG = require('./assets/background.png');
 
 const ProfileScreen = ({ navigation }: { navigation: any }) => {
   const dispatch = useDispatch();
-  const { profile } = useSelector((state: any) => state.user);
+  // 🟢 UPDATED: Pull 'caughtPokemonIds' directly from Redux for an accurate live count
+  const { profile, caughtPokemonIds } = useSelector((state: any) => state.user);
 
   const [isEditing, setIsEditing] = useState(false);
   const [username, setUsername] = useState(profile?.username || '');
@@ -41,7 +42,8 @@ const ProfileScreen = ({ navigation }: { navigation: any }) => {
     ? require('./assets/profileimgM2.png')
     : require('./assets/profileimg2.png');
 
-  const scannedCount = profile?.discovered ? profile.discovered.length : 0;
+  // 🟢 UPDATED: Calculate count from the ID array
+  const scannedCount = caughtPokemonIds ? caughtPokemonIds.length : 0;
 
   const handleSignOut = () => {
     Alert.alert("Sign Out", "Are you sure you want to log out?", [
@@ -122,9 +124,10 @@ const ProfileScreen = ({ navigation }: { navigation: any }) => {
               </View>
 
               <View style={styles.scannedSection}>
-                <Text style={styles.scannedLabel}>Scanned#</Text>
+                <Text style={styles.scannedLabel}>Scanned:</Text>
                 <View style={styles.scannedRow}>
                   <Image source={POKEBALL_ICON} style={styles.smallPokeball} />
+                  {/* 🟢 DISPLAYS THE LIVE COUNT */}
                   <Text style={styles.scannedNumber}>{scannedCount}</Text>
                 </View>
               </View>
@@ -274,19 +277,18 @@ const styles = StyleSheet.create({
   },
   spriteSmall: {
     position: 'absolute',
-    top: 10, // Moved up slightly
+    top: 10,
     right: 20,
-    width: 130, // Increased from 100
-    height: 150, // Increased from 120
+    width: 130,
+    height: 150,
     resizeMode: 'contain',
   },
-  // 🟢 UPDATED: Larger Large Sprite & Fixed Bottom Alignment
   spriteLarge: {
     position: 'absolute',
-    bottom: -40, // Ensures feet touch bottom
-    left: -30, // Moved slightly left for better composition
-    width: 350, // Increased from 250
-    height: 320, // Increased from 250
+    bottom: -40,
+    left: -30,
+    width: 350,
+    height: 320,
     resizeMode: 'contain',
     zIndex: 1,
   },
