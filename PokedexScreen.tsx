@@ -25,7 +25,7 @@ const { width, height } = Dimensions.get('window');
 const BACKGROUND_IMG = require('./assets/background.png');
 
 // Mock Data for "aj"
-const MOCK_DISCOVERED_IDS = [1, 4, 7, 25, 133, 143, 150];
+// const MOCK_DISCOVERED_IDS = [1, 4, 7, 25, 133, 143, 150];
 
 // 🟢 TYPE ICONS MAPPING (Static requires are necessary in RN)
 const TYPE_ICONS: { [key: string]: any } = {
@@ -207,7 +207,7 @@ const PokedexScreen = () => {
   const dispatch = useDispatch();
 
   const { list, isLoading } = useSelector((state: any) => state.pokemon);
-  const { profile } = useSelector((state: any) => state.user);
+  const { profile, caughtPokemonIds } = useSelector((state: any) => state.user);
 
   const [displayedPokemon, setDisplayedPokemon] = useState([]);
   const [searchText, setSearchText] = useState('');
@@ -259,17 +259,19 @@ const PokedexScreen = () => {
   }, [dispatch, list]);
 
   // Filter Logic
+// Filter Logic
   useEffect(() => {
     if (list.length > 0) {
+      // ✅ USE REAL REDUX DATA HERE
       const caughtPokemon = list.filter((p: any) =>
-        MOCK_DISCOVERED_IDS.includes(p.id)
+        caughtPokemonIds.includes(p.id)
       );
       const filtered = caughtPokemon.filter((p: any) =>
         p.name.toLowerCase().includes(searchText.toLowerCase())
       );
       setDisplayedPokemon(filtered);
     }
-  }, [list, searchText, profile]);
+  }, [list, searchText, caughtPokemonIds]); // Add caughtPokemonIds to dependency array
 
   const handlePokemonPress = (pokemon: any) => {
     setSelectedPokemon(pokemon);

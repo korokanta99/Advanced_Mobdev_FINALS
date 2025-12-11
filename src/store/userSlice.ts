@@ -16,10 +16,9 @@ interface UserProfileState {
     error: string | null;
 }
 
-const initialState: UserProfileState = {
-    profile: null,
-    isLoading: false,
-    error: null,
+const initialState: UserState = {
+  profile: { name: 'Trainer', gender: 'male' },
+  caughtPokemonIds: [1, 4, 7], // Starters pre-caught for testing
 };
 
 // --- THUNKS ---
@@ -72,53 +71,29 @@ export const logoutUser = createAsyncThunk(
 );
 
 // --- SLICE ---
+interface UserState {
+  profile: {
+    name: string;
+    gender: string;
+  };
+  caughtPokemonIds: number[]; // Store IDs of caught pokemon
+}
 
 const userSlice = createSlice({
-    name: "user",
-    initialState,
-    reducers: {
-        addDiscovered(state, action: PayloadAction<string>) {
-            if (state.profile) {
-                state.profile.discovered.push(action.payload);
-            }
-        },
+  name: 'user',
+  initialState,
+  reducers: {
+    setProfile: (state, action: PayloadAction<any>) => {
+      state.profile = action.payload;
     },
-    extraReducers: (builder) => {
-        // Login
-        builder.addCase(loginUser.fulfilled, (state, action) => {
-            state.isLoading = false;
-            state.profile = action.payload;
-            state.error = null;
-        });
-        builder.addCase(loginUser.rejected, (state, action) => {
-            state.isLoading = false;
-            state.error = action.payload as string;
-        });
-        builder.addCase(loginUser.pending, (state) => { state.isLoading = true; });
-
-        // Signup
-        builder.addCase(signupUser.fulfilled, (state, action) => {
-            state.isLoading = false;
-            state.profile = action.payload;
-            state.error = null;
-        });
-        builder.addCase(signupUser.pending, (state) => { state.isLoading = true; });
-
-        // Update
-        builder.addCase(updateProfile.fulfilled, (state, action) => {
-            if (state.profile) {
-                state.profile = { ...state.profile, ...action.payload };
-            }
-        });
-
-        // 🟢 LOGOUT HANDLER (Clears Data)
-        builder.addCase(logoutUser.fulfilled, (state) => {
-            state.profile = null;
-            state.isLoading = false;
-            state.error = null;
-        });
-    }
+    // ✅ NEW: Action to capture a pokemon
+    addCaughtPokemon: (state, action: PayloadAction<number>) => {
+      if (!state.caughtPokemonIds.includes(action.payload)) {
+        state.caughtPokemonIds.push(action.payload);
+      }
+    },
+  },
 });
 
-export const { addDiscovered } = userSlice.actions;
+export const { setProfile, addCaughtPokemon } = userSlice.actions;
 export default userSlice.reducer;
