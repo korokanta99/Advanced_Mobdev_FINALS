@@ -9,6 +9,7 @@ import {
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useDispatch } from 'react-redux';
 import { capturePokemon } from './src/store/userSlice';
+import { removeWildSpawn } from './src/store/pokemonSlice';
 
 const ScanScreen = () => {
   const device = useCameraDevice('back');
@@ -16,13 +17,13 @@ const ScanScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const dispatch = useDispatch<any>();
+  const { pokemonId, pokemonImage, instanceId } = route.params as any || {};
   
   // 👈 2. Explicitly select a format that supports Photos
   const format = useCameraFormat(device, [
     { photoResolution: 'max' }
   ]);
   
-  const { pokemonId, pokemonImage } = route.params as any || {};
 
   useEffect(() => {
     if (!hasPermission) requestPermission();
@@ -31,9 +32,13 @@ const ScanScreen = () => {
   const handleCapture = () => {
     if (pokemonId) {
       dispatch(capturePokemon(pokemonId));
+      if (instanceId) {
+        dispatch(removeWildSpawn(instanceId));
+      }
       Alert.alert("Gotcha!", "The Pokémon was added to your Pokedex!", [
         { text: "OK", onPress: () => navigation.navigate('Home') }
       ]);
+      
     } else {
         navigation.goBack();
     }

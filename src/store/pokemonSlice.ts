@@ -43,7 +43,13 @@ const pokemonSlice = createSlice({
     // Optional: Clear spawns if map gets too cluttered
     clearWildSpawns(state) {
         state.wildSpawns = [];
-    }
+    },
+    removeWildSpawn(state, action: PayloadAction<string>) {
+        // Filter out the pokemon with the matching uniqueKey
+        state.wildSpawns = state.wildSpawns.filter(
+            p => p.uniqueKey !== action.payload
+        );
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -59,5 +65,5 @@ const pokemonSlice = createSlice({
   },
 });
 
-export const { addWildSpawns, clearWildSpawns } = pokemonSlice.actions;
+export const { addWildSpawns, clearWildSpawns, removeWildSpawn} = pokemonSlice.actions;
 export default pokemonSlice.reducer;

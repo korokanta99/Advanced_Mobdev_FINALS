@@ -56,7 +56,7 @@ const SearchBar = ({ value, onSearch, onMicPress, isListening }: any) => (
     <ImageBackground source={require('./assets/search.png')} style={styles.searchBarBackground} resizeMode="stretch">
       <TextInput
         style={styles.searchInput}
-        placeholder="Search captured..."
+        placeholder="Search pokemon..."
         placeholderTextColor="#FFF"
         onChangeText={onSearch}
         value={value}

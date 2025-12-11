@@ -114,21 +114,23 @@ const MapScreen = () => {
   }, [location]);
 
   const handleMarkerPress = (pokemon: any) => {
-    Alert.alert(
-      "Wild Pokémon Appeared!", 
-      "Do you want to capture it?", 
-      [
-        { text: "Run Away", style: "cancel" },
-        { 
-          text: "Open Camera", 
-          onPress: () => navigation.navigate('Scan', { 
-            pokemonId: pokemon.id,
-            pokemonImage: pokemon.sprite 
-          }) 
-        }
-      ]
-    );
-  };
+      Alert.alert(
+        "Wild Pokémon Appeared!", 
+        "Do you want to capture it?", 
+        [
+          { text: "Run Away", style: "cancel" },
+          { 
+            text: "Open Camera", 
+            onPress: () => navigation.navigate('Scan', { 
+              pokemonId: pokemon.id,
+              pokemonImage: pokemon.sprite,
+              // 👇 NEW: Pass the unique ID so we can delete it later
+              instanceId: pokemon.uniqueKey 
+            }) 
+          }
+        ]
+      );
+    };
 
   return (
     <View style={styles.container}>
