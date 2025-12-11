@@ -9,10 +9,19 @@ node version: v20.19.6
 # Procedure:
 
 1. Install dependencies
-- npm install
-
+```
+npm install
+```
 2. Start metro server
 'npm start'
 
 3. Start android emulator
 'npx react-native run-android'
+
+4. Restarting/refreshing emulator
+'''
+killall -9 node
+cd android && ./gradlew clean
+cd ..
+npx react-native run-android
+'''

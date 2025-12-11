@@ -2,6 +2,14 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSCameraUsageDescription</key>
+	<string>We need access to your camera to scan for Pokémon.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>We need access to the microphone for voice search.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>We need your location to find wild Pokémon nearby.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>We need permission to save your Pokémon captures.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>

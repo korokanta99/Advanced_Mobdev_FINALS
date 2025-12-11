@@ -5,7 +5,6 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   Image,
   Dimensions,
   ImageBackground,
@@ -15,59 +14,91 @@ import {
   Modal
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchPokemon } from './src/store/pokemonSlice';
 import { useNavigation } from '@react-navigation/native';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+
+import { fetchPokemon } from './src/store/pokemonSlice';
 
 const { width, height } = Dimensions.get('window');
+
+// Background Image Asset
+const BACKGROUND_IMG = require('./assets/background.png');
 
 // Mock Data for "aj"
 const MOCK_DISCOVERED_IDS = [1, 4, 7, 25, 133, 143, 150];
 
+// 🟢 TYPE ICONS MAPPING (Static requires are necessary in RN)
+const TYPE_ICONS: { [key: string]: any } = {
+  bug: require('./assets/Type/bug.png'),
+  dark: require('./assets/Type/dark.png'),
+  dragon: require('./assets/Type/dragon.png'),
+  electric: require('./assets/Type/electric.png'),
+  fairy: require('./assets/Type/fairy.png'),
+  fighting: require('./assets/Type/fighting.png'),
+  fire: require('./assets/Type/fire.png'),
+  flying: require('./assets/Type/flying.png'),
+  ghost: require('./assets/Type/ghost.png'),
+  grass: require('./assets/Type/grass.png'),
+  ground: require('./assets/Type/ground.png'),
+  ice: require('./assets/Type/ice.png'),
+  normal: require('./assets/Type/normal.png'),
+  poison: require('./assets/Type/poison.png'),
+  psychic: require('./assets/Type/psychic.png'),
+  rock: require('./assets/Type/rock.png'),
+  steel: require('./assets/Type/steel.png'),
+  water: require('./assets/Type/water.png'),
+};
+
 // --- Components ---
 
-const SearchBar = ({ onSearch }: { onSearch: (text: string) => void }) => {
-  return (
-    <ImageBackground
-      source={require('./assets/search.png')}
-      style={styles.searchBarBackground}
-      resizeMode="stretch"
-    >
-      <View style={styles.searchBarContent}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search captured..."
-          placeholderTextColor="#FFF"
-          onChangeText={onSearch}
-          autoCapitalize="none"
-        />
-      </View>
+const SearchBar = ({ value, onSearch, onMicPress, isListening }: any) => (
+  <View style={styles.searchRow}>
+    <ImageBackground source={require('./assets/search.png')} style={styles.searchBarBackground} resizeMode="stretch">
+      <TextInput
+        style={styles.searchInput}
+        placeholder="Search captured..."
+        placeholderTextColor="#FFF"
+        onChangeText={onSearch}
+        value={value}
+        autoCapitalize="none"
+      />
     </ImageBackground>
-  );
-};
+
+    <TouchableOpacity onPress={onMicPress} style={styles.micButtonContainer}>
+       <Icon
+         name={isListening ? "mic" : "mic-none"}
+         size={28}
+         color={isListening ? "#ff4444" : "#ffffff"}
+       />
+    </TouchableOpacity>
+  </View>
+);
 
 const PokemonCard = ({ pokemon, onPress }: { pokemon: any, onPress: () => void }) => {
   const imageUrl = pokemon.sprites?.other?.['official-artwork']?.front_default
     || pokemon.sprites?.front_default;
 
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.9} style={styles.cardContainer}>
-      <ImageBackground
-        source={require('./assets/inputs-Sheet.png')}
-        style={styles.cardBackground}
-        resizeMode="stretch"
-      >
-        <View style={styles.cardContent}>
-          <Image source={{ uri: imageUrl }} style={styles.pokemonImage} />
-          <View style={styles.pokemonInfo}>
-            <Text style={styles.pokemonName}>{pokemon.name}</Text>
-            <View style={styles.hpBar}>
-              <View style={styles.hpFill} />
+    <View style={styles.cardWrapper}>
+      <TouchableOpacity onPress={onPress} activeOpacity={0.9} style={styles.cardContainer}>
+        <ImageBackground
+          source={require('./assets/inputs-Sheet.png')}
+          style={styles.cardBackground}
+          resizeMode="stretch"
+        >
+          <View style={styles.cardContent}>
+            <Image source={{ uri: imageUrl }} style={styles.pokemonImage} />
+            <View style={styles.pokemonInfo}>
+              <Text style={styles.pokemonName}>{pokemon.name}</Text>
+              <View style={styles.hpBar}>
+                <View style={styles.hpFill} />
+              </View>
             </View>
+            <Text style={styles.pokemonId}>#{String(pokemon.id).padStart(3, '0')}</Text>
           </View>
-          <Text style={styles.pokemonId}>#{String(pokemon.id).padStart(3, '0')}</Text>
-        </View>
-      </ImageBackground>
-    </TouchableOpacity>
+        </ImageBackground>
+      </TouchableOpacity>
+    </View>
   );
 };
 
@@ -89,19 +120,13 @@ const MenuButton: React.FC<MenuButtonProps> = ({ text, onPress, assetSource }) =
   </TouchableOpacity>
 );
 
-// 🟢 ENHANCED MODAL: Shows Stats, Types, Abilities
+// 🟢 ENHANCED MODAL: Now with Images for Types
 const PokemonDetailModal = ({ visible, pokemon, onClose }: { visible: boolean, pokemon: any, onClose: () => void }) => {
   if (!pokemon) return null;
 
   const imageUrl = pokemon.sprites?.other?.['official-artwork']?.front_default || pokemon.sprites?.front_default;
-
-  // Get all types (e.g. "GRASS / POISON")
-  const types = pokemon.types.map((t: any) => t.type.name).join(' / ').toUpperCase();
-
-  // Get abilities
   const abilities = pokemon.abilities.map((a: any) => a.ability.name.replace('-', ' ')).join(', ').toUpperCase();
 
-  // Helper to extract stats safely
   const getStat = (name: string) => {
     const s = pokemon.stats.find((s: any) => s.stat.name === name);
     return s ? s.base_stat : 0;
@@ -116,7 +141,6 @@ const PokemonDetailModal = ({ visible, pokemon, onClose }: { visible: boolean, p
     >
       <View style={styles.modalOverlay}>
         <View style={styles.modalContainer}>
-          {/* Retro Border Box */}
           <View style={styles.modalContent}>
 
             <View style={styles.modalHeaderRow}>
@@ -126,13 +150,22 @@ const PokemonDetailModal = ({ visible, pokemon, onClose }: { visible: boolean, p
 
             <Image source={{ uri: imageUrl }} style={styles.modalImage} />
 
-            {/* Info Box */}
             <View style={styles.infoBox}>
-                <Text style={styles.infoText}>TYPE: {types}</Text>
+                {/* 🟢 REPLACED TEXT TYPES WITH ICONS */}
+                <View style={styles.typeRow}>
+                  <Text style={styles.infoText}>TYPE: </Text>
+                  {pokemon.types.map((t: any, index: number) => (
+                    <Image
+                      key={index}
+                      source={TYPE_ICONS[t.type.name]}
+                      style={styles.typeIcon}
+                      resizeMode="contain"
+                    />
+                  ))}
+                </View>
                 <Text style={styles.infoText}>HT: {pokemon.height / 10}m   WT: {pokemon.weight / 10}kg</Text>
             </View>
 
-            {/* Stats Grid */}
             <View style={styles.statsGrid}>
                 <View style={styles.statRow}>
                     <Text style={styles.statLabel}>HP</Text>
@@ -152,7 +185,6 @@ const PokemonDetailModal = ({ visible, pokemon, onClose }: { visible: boolean, p
                 </View>
             </View>
 
-            {/* Abilities */}
             <View style={styles.abilityBox}>
                 <Text style={styles.abilityTitle}>ABILITIES:</Text>
                 <Text style={styles.abilityText}>{abilities}</Text>
@@ -190,6 +222,20 @@ const PokedexScreen = () => {
   const profileIcon = isFemale
     ? require('./assets/profileM.png')
     : require('./assets/profile.png');
+
+  // MOCK VOICE SEARCH LOGIC
+  const [isListening, setIsListening] = useState(false);
+
+  const startVoiceSearch = () => {
+    setIsListening(true);
+    setSearchText("");
+    setTimeout(() => {
+      const demoWords = ["Pikachu", "Charizard", "Bulbasaur", "Mewtwo", "Eevee"];
+      const randomWord = demoWords[Math.floor(Math.random() * demoWords.length)];
+      setSearchText(randomWord);
+      setIsListening(false);
+    }, 1500);
+  };
 
   // Hardware Back Button
   useEffect(() => {
@@ -231,71 +277,82 @@ const PokedexScreen = () => {
   };
 
   const goToCommunity = () => navigation.navigate('Community');
-  const goToMap = () => Alert.alert('Navigation', 'Go to Map Screen');
-  const startScan = () => Alert.alert('Action', 'Starting Scan...');
+  const goToMap = () => navigation.navigate('Map');
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>PokéDex</Text>
-        <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
-          <Image
-            source={profileIcon}
-            style={styles.professorIcon}
-          />
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.searchSection}>
-        <SearchBar onSearch={setSearchText} />
-      </View>
-
-      <View style={styles.contentArea}>
-        {isLoading ? (
-          <ActivityIndicator size="large" color="#000" style={{ marginTop: 50 }} />
-        ) : (
-          <FlatList
-            data={displayedPokemon}
-            keyExtractor={(item: any) => item.id.toString()}
-            renderItem={({ item }) => (
-              <PokemonCard
-                pokemon={item}
-                onPress={() => handlePokemonPress(item)}
-              />
-            )}
-            showsVerticalScrollIndicator={false}
-            ListEmptyComponent={
-              <Text style={styles.emptyText}>No Pokémon caught yet!</Text>
-            }
-            contentContainerStyle={{ paddingBottom: 200 }}
-          />
-        )}
-      </View>
-
-      <PokemonDetailModal
-        visible={modalVisible}
-        pokemon={selectedPokemon}
-        onClose={() => setModalVisible(false)}
-      />
-
-      <View style={styles.footerMenu}>
-        <View style={styles.menuButtonsContainer}>
-          <MenuButton text="Community" onPress={goToCommunity} assetSource={require('./assets/finalcom.png')} />
-          <MenuButton text="Map" onPress={goToMap} assetSource={require('./assets/map.png')} />
-          <MenuButton text="Scan" onPress={startScan} assetSource={require('./assets/scanfinal.png')} />
+    <ImageBackground source={BACKGROUND_IMG} style={styles.backgroundImage} resizeMode="cover">
+      <View style={styles.container}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.title}>PokéDex</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
+            <Image
+              source={profileIcon}
+              style={styles.professorIcon}
+            />
+          </TouchableOpacity>
         </View>
-        <Image source={require('./assets/pokeball-Sheet.png')} style={styles.oversizedPokeball} />
+
+        <View style={styles.searchSection}>
+          <SearchBar
+              value={searchText}
+              onSearch={setSearchText}
+              onMicPress={startVoiceSearch}
+              isListening={isListening}
+          />
+        </View>
+
+        <View style={styles.contentArea}>
+          {isLoading ? (
+            <ActivityIndicator size="large" color="#000" style={{ marginTop: 50 }} />
+          ) : (
+            <FlatList
+              data={displayedPokemon}
+              keyExtractor={(item: any) => item.id.toString()}
+              renderItem={({ item }) => (
+                <PokemonCard
+                  pokemon={item}
+                  onPress={() => handlePokemonPress(item)}
+                />
+              )}
+              showsVerticalScrollIndicator={false}
+              ListEmptyComponent={
+                <Text style={styles.emptyText}>No Pokémon caught yet!</Text>
+              }
+              contentContainerStyle={{ paddingBottom: 280 }}
+            />
+          )}
+        </View>
+
+        <PokemonDetailModal
+          visible={modalVisible}
+          pokemon={selectedPokemon}
+          onClose={() => setModalVisible(false)}
+        />
+
+        <View style={styles.footerMenu}>
+          <View style={styles.menuButtonsContainer}>
+            <MenuButton text="Community" onPress={goToCommunity} assetSource={require('./assets/finalcom.png')} />
+            <MenuButton text="Map" onPress={goToMap} assetSource={require('./assets/map.png')} />
+          </View>
+          <Image source={require('./assets/pokeball-Sheet.png')} style={styles.oversizedPokeball} />
+        </View>
       </View>
-    </View>
+    </ImageBackground>
   );
 };
 
 const PIXEL_FONT = 'VT323-Regular';
 
 const styles = StyleSheet.create({
+  backgroundImage: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
   container: {
     flex: 1,
-    backgroundColor: '#C5F4FF',
+    backgroundColor: 'transparent',
   },
   header: {
     flexDirection: 'row',
@@ -322,21 +379,26 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     backgroundColor: '#FFF',
   },
+
+  // SEARCH ROW STYLES
   searchSection: {
-    paddingHorizontal: 20,
+    width: '100%',
+    alignItems: 'center',
     marginTop: 5,
     marginBottom: 10,
   },
+  searchRow: {
+    flexDirection: 'row',
+    width: '90%',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   searchBarBackground: {
-    width: '100%',
+    flex: 1,
     height: 45,
     justifyContent: 'center',
-    paddingLeft: 55,
-    paddingRight: 55,
-  },
-  searchBarContent: {
-    flex: 1,
-    justifyContent: 'center',
+    paddingLeft: 50,
+    marginRight: 10,
   },
   searchInput: {
     fontSize: 18,
@@ -346,14 +408,31 @@ const styles = StyleSheet.create({
     margin: 0,
     height: '100%',
   },
+  micButtonContainer: {
+    width: 45,
+    height: 45,
+    backgroundColor: '#D38C40',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#2A2A2A',
+  },
+
   contentArea: {
     flex: 1,
     paddingHorizontal: 20,
   },
-  cardContainer: {
+
+  // CARD STYLES
+  cardWrapper: {
     width: '100%',
-    height: 100,
-    marginBottom: 15,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  cardContainer: {
+    width: '85%',
+    height: 180,
   },
   cardBackground: {
     width: '100%',
@@ -361,34 +440,37 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cardContent: {
-    flexDirection: 'row',
+    flex: 1,
+    flexDirection: 'column',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    justifyContent: 'center',
+    padding: 10,
+    zIndex: 11,
   },
   pokemonImage: {
-    width: 70,
-    height: 70,
-    marginRight: 15,
+    width: 80,
+    height: 80,
+    marginBottom: 5,
   },
   pokemonInfo: {
-    flex: 1,
-    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
   },
   pokemonName: {
-    fontSize: 24,
+    fontSize: 32,
     color: '#FFF',
     fontFamily: 'PixelifySans-Bold',
     textTransform: 'capitalize',
     marginBottom: 5,
     textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: {width: 1, height: 1},
+    textShadowOffset: {width: 2, height: 2},
     textShadowRadius: 1,
   },
   hpBar: {
-    width: '80%',
-    height: 8,
+    width: '70%',
+    height: 12,
     backgroundColor: 'rgba(0,0,0,0.3)',
-    borderRadius: 4,
+    borderRadius: 6,
     overflow: 'hidden',
   },
   hpFill: {
@@ -397,7 +479,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#4ade80',
   },
   pokemonId: {
-    fontSize: 18,
+    position: 'absolute',
+    top: 10,
+    right: 15,
+    fontSize: 20,
     color: '#EEE',
     fontFamily: 'PixelifySans-Bold',
     opacity: 0.8,
@@ -413,6 +498,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     width: '100%',
+    height: height * 0.25,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
@@ -421,8 +507,9 @@ const styles = StyleSheet.create({
   },
   menuButtonsContainer: {
     flex: 1,
-    marginBottom: height * 0.05,
-    gap: 10,
+    marginBottom: 20,
+    gap: 12,
+    zIndex: 10,
   },
   menuButtonBackground: {
     width: 170,
@@ -440,12 +527,13 @@ const styles = StyleSheet.create({
   },
   oversizedPokeball: {
     position: 'absolute',
-    right: 0,
-    bottom: 0,
-    width: width * 0.45,
-    height: width * 0.45,
+    right: -30,
+    bottom: -70,
+    width: 170,
+    height: width * 0.65,
     resizeMode: 'contain',
-    zIndex: -1,
+    zIndex: 10,
+    opacity: 0.9,
   },
 
   // --- MODAL STYLES ---
@@ -501,6 +589,18 @@ const styles = StyleSheet.create({
     borderColor: '#2A2A2A',
     marginBottom: 10,
     alignItems: 'center',
+  },
+  // 🟢 NEW TYPE ICONS LAYOUT
+  typeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 5,
+  },
+  typeIcon: {
+    width: 50,
+    height: 25,
+    marginHorizontal: 4,
   },
   infoText: {
     fontFamily: PIXEL_FONT,
