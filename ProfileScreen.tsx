@@ -8,7 +8,8 @@ import {
   Image,
   ScrollView,
   TextInput,
-  Alert
+  Alert,
+  ImageBackground
 } from 'react-native';
 
 import { useDispatch, useSelector } from 'react-redux';
@@ -18,6 +19,7 @@ import { logoutUser, updateProfile } from './src/store/userSlice';
 const PIXEL_BACK_ARROW = require('./assets/back-Sheet.png');
 const POKEBALL_ICON = require('./assets/pokeball-Sheet.png');
 const ORANGE_POKEBALL = require('./assets/pokeball-Sheet.png');
+const BACKGROUND_IMG = require('./assets/background.png');
 
 const ProfileScreen = ({ navigation }: { navigation: any }) => {
   const dispatch = useDispatch();
@@ -27,7 +29,7 @@ const ProfileScreen = ({ navigation }: { navigation: any }) => {
   const [username, setUsername] = useState(profile?.username || '');
   const [email, setEmail] = useState(profile?.email || '');
 
-  // 🟢 DETERMINE GENDER & SELECT SPRITES
+  // Determine Gender & Sprites
   const gender = profile?.gender || '';
   const isFemale = gender.toLowerCase() === 'female';
 
@@ -48,11 +50,8 @@ const ProfileScreen = ({ navigation }: { navigation: any }) => {
             text: "Log Out",
             style: "destructive",
             onPress: async () => {
-                // 1. Clear Data
                 // @ts-ignore
                 await dispatch(logoutUser());
-
-                // 2. Force Navigation to Login
                 navigation.reset({
                     index: 0,
                     routes: [{ name: 'Login' }],
@@ -79,76 +78,78 @@ const ProfileScreen = ({ navigation }: { navigation: any }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+    <ImageBackground source={BACKGROUND_IMG} style={styles.backgroundImage} resizeMode="cover">
+      <SafeAreaView style={styles.container}>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
 
-        {/* Header - Goes to Pokedex */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.navigate('Home')} style={styles.backButton}>
-            <Image source={PIXEL_BACK_ARROW} style={styles.backArrowImage} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Profile</Text>
-        </View>
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => navigation.navigate('Home')} style={styles.backButton}>
+              <Image source={PIXEL_BACK_ARROW} style={styles.backArrowImage} />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Profile</Text>
+          </View>
 
-        <View style={styles.profileContent}>
-          <View style={styles.leftColumn}>
-            <View style={styles.retroBox}>
-              {isEditing ? (
-                  <TextInput
-                    value={username}
-                    onChangeText={setUsername}
-                    style={styles.editInput}
-                    autoCapitalize="none"
-                  />
-              ) : (
-                  <Text style={styles.boxText}>{username || 'Trainer'}</Text>
-              )}
-              <View style={styles.accentBar} />
-            </View>
+          <View style={styles.profileContent}>
+            <View style={styles.leftColumn}>
+              <View style={styles.retroBox}>
+                {isEditing ? (
+                    <TextInput
+                      value={username}
+                      onChangeText={setUsername}
+                      style={styles.editInput}
+                      autoCapitalize="none"
+                    />
+                ) : (
+                    <Text style={styles.boxText}>{username || 'Trainer'}</Text>
+                )}
+                <View style={styles.accentBar} />
+              </View>
 
-            <View style={styles.retroBox}>
-               {isEditing ? (
-                  <TextInput
-                    value={email}
-                    onChangeText={setEmail}
-                    style={styles.editInput}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                  />
-              ) : (
-                  <Text style={styles.boxText}>{email || 'No Email'}</Text>
-              )}
-              <View style={styles.accentBar} />
-            </View>
+              <View style={styles.retroBox}>
+                 {isEditing ? (
+                    <TextInput
+                      value={email}
+                      onChangeText={setEmail}
+                      style={styles.editInput}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                    />
+                ) : (
+                    <Text style={styles.boxText}>{email || 'No Email'}</Text>
+                )}
+                <View style={styles.accentBar} />
+              </View>
 
-            <View style={styles.scannedSection}>
-              <Text style={styles.scannedLabel}>Scanned#</Text>
-              <View style={styles.scannedRow}>
-                <Image source={POKEBALL_ICON} style={styles.smallPokeball} />
-                <Text style={styles.scannedNumber}>{scannedCount}</Text>
+              <View style={styles.scannedSection}>
+                <Text style={styles.scannedLabel}>Scanned#</Text>
+                <View style={styles.scannedRow}>
+                  <Image source={POKEBALL_ICON} style={styles.smallPokeball} />
+                  <Text style={styles.scannedNumber}>{scannedCount}</Text>
+                </View>
               </View>
             </View>
+
+            {/* Sprites */}
+            <Image source={smallSprite} style={styles.spriteSmall} />
+            <Image source={largeSprite} style={styles.spriteLarge} />
+            <Image source={ORANGE_POKEBALL} style={styles.spriteLargeBall} />
+
+            <View style={styles.actionButtonContainer}>
+              <TouchableOpacity style={styles.retroButton} onPress={toggleEdit}>
+                <Text style={styles.buttonText}>{isEditing ? "SAVE" : "EDIT"}</Text>
+                <View style={styles.accentBarButton} />
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.retroButton} onPress={handleSignOut}>
+                <Text style={styles.buttonText}>SIGN OUT</Text>
+                <View style={styles.accentBarButton} />
+              </TouchableOpacity>
+            </View>
           </View>
-
-          {/* 🟢 DYNAMIC SPRITES */}
-          <Image source={smallSprite} style={styles.spriteSmall} />
-          <Image source={largeSprite} style={styles.spriteLarge} />
-          <Image source={ORANGE_POKEBALL} style={styles.spriteLargeBall} />
-
-          <View style={styles.actionButtonContainer}>
-            <TouchableOpacity style={styles.retroButton} onPress={toggleEdit}>
-              <Text style={styles.buttonText}>{isEditing ? "SAVE" : "EDIT"}</Text>
-              <View style={styles.accentBarButton} />
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.retroButton} onPress={handleSignOut}>
-              <Text style={styles.buttonText}>SIGN OUT</Text>
-              <View style={styles.accentBarButton} />
-            </TouchableOpacity>
-          </View>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+        </ScrollView>
+      </SafeAreaView>
+    </ImageBackground>
   );
 };
 
@@ -156,7 +157,6 @@ const ProfileScreen = ({ navigation }: { navigation: any }) => {
 
 const PIXEL_FONT = 'VT323-Regular';
 const COLORS = {
-  bg: '#A8E6F0',
   boxBg: '#F4B860',
   accent: '#D38C40',
   border: '#2A2A2A',
@@ -166,9 +166,14 @@ const COLORS = {
 };
 
 const styles = StyleSheet.create({
+  backgroundImage: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
   container: {
     flex: 1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: 'transparent',
   },
   scrollContent: {
     flexGrow: 1,
@@ -196,7 +201,7 @@ const styles = StyleSheet.create({
     fontSize: 50,
     color: COLORS.white,
     fontFamily: PIXEL_FONT,
-    textShadowColor: 'rgba(0,0,0,0.2)',
+    textShadowColor: 'rgba(0,0,0,0.8)',
     textShadowOffset: { width: 2, height: 2 },
     textShadowRadius: 1,
   },
@@ -269,29 +274,31 @@ const styles = StyleSheet.create({
   },
   spriteSmall: {
     position: 'absolute',
-    top: 20,
-    right: 30,
-    width: 100,
-    height: 120,
+    top: 10, // Moved up slightly
+    right: 20,
+    width: 130, // Increased from 100
+    height: 150, // Increased from 120
     resizeMode: 'contain',
   },
+  // 🟢 UPDATED: Larger Large Sprite & Fixed Bottom Alignment
   spriteLarge: {
     position: 'absolute',
-    bottom: 0,
-    left: -20,
-    width: 250,
-    height: 250,
+    bottom: -40, // Ensures feet touch bottom
+    left: -30, // Moved slightly left for better composition
+    width: 350, // Increased from 250
+    height: 320, // Increased from 250
     resizeMode: 'contain',
     zIndex: 1,
   },
   spriteLargeBall: {
     position: 'absolute',
-    bottom: 0,
+    bottom: -10,
+    left: 250,
     right: -20,
-    width: 160,
-    height: 160,
+    width: 140,
+    height: 120,
     resizeMode: 'contain',
-    zIndex: 0,
+    zIndex: 1,
   },
   actionButtonContainer: {
     position: 'absolute',
