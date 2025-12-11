@@ -142,3 +142,18 @@ export async function submitPost(uid: string, username: string, content: string,
         throw error;
     }
 }
+
+/**
+ * Saves a captured Pokemon ID to the user's "discovered" list in Firestore.
+ * Uses arrayUnion to ensure we don't add duplicates.
+ */
+export async function saveCapturedPokemon(uid: string, pokemonId: number) {
+    try {
+        await firestore().collection('users').doc(uid).update({
+            discovered: firestore.FieldValue.arrayUnion(pokemonId)
+        });
+    } catch (error) {
+        console.error("Save Pokemon Error:", error);
+        throw error;
+    }
+}

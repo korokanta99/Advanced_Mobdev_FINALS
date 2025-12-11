@@ -1,24 +1,25 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-// 🟢 IMPORT signOutUser
-import { loginWithEmail, signupWithEmail, updateUserDoc, signOutUser } from "../api/firebase";
+import { loginWithEmail, signupWithEmail, updateUserDoc, signOutUser, saveCapturedPokemon } from "../api/firebase";
 
 interface UserProfileData {
     uid: string;
     email: string;
     username: string;
-    discovered: string[];
-    gender?: string; // Added gender to interface
+    gender?: string;
 }
 
-interface UserProfileState {
+interface UserState {
     profile: UserProfileData | null;
+    caughtPokemonIds: number[]; // Stores IDs of caught pokemon
     isLoading: boolean;
     error: string | null;
 }
 
 const initialState: UserState = {
-  profile: { name: 'Trainer', gender: 'male' },
-  caughtPokemonIds: [1, 4, 7], // Starters pre-caught for testing
+    profile: null,
+    caughtPokemonIds: [], // Start empty, load from DB
+    isLoading: false,
+    error: null,
 };
 
 // --- THUNKS ---
@@ -45,19 +46,6 @@ export const signupUser = createAsyncThunk(
     }
 );
 
-export const updateProfile = createAsyncThunk(
-    "user/updateProfile",
-    async ({ uid, data }: { uid: string, data: any }, { rejectWithValue }) => {
-        try {
-            await updateUserDoc(uid, data);
-            return data;
-        } catch (error) {
-            return rejectWithValue("Failed to update profile.");
-        }
-    }
-);
-
-// 🟢 LOGOUT THUNK
 export const logoutUser = createAsyncThunk(
     "user/logoutUser",
     async (_, { rejectWithValue }) => {
@@ -70,30 +58,74 @@ export const logoutUser = createAsyncThunk(
     }
 );
 
+// ✅ NEW: Thunk to capture pokemon and save to DB
+export const capturePokemon = createAsyncThunk(
+    "user/capturePokemon",
+    async (pokemonId: number, { getState, rejectWithValue }) => {
+        const state: any = getState();
+        const uid = state.user.profile?.uid;
+
+        if (!uid) return rejectWithValue("User not logged in");
+
+        try {
+            // 1. Save to Firestore
+            await saveCapturedPokemon(uid, pokemonId);
+            // 2. Return ID to update Redux
+            return pokemonId;
+        } catch (error) {
+            return rejectWithValue("Failed to save capture");
+        }
+    }
+);
+
 // --- SLICE ---
-interface UserState {
-  profile: {
-    name: string;
-    gender: string;
-  };
-  caughtPokemonIds: number[]; // Store IDs of caught pokemon
-}
 
 const userSlice = createSlice({
-  name: 'user',
-  initialState,
-  reducers: {
-    setProfile: (state, action: PayloadAction<any>) => {
-      state.profile = action.payload;
+    name: 'user',
+    initialState,
+    reducers: {
+        setProfile: (state, action: PayloadAction<any>) => {
+            state.profile = action.payload;
+        },
     },
-    // ✅ NEW: Action to capture a pokemon
-    addCaughtPokemon: (state, action: PayloadAction<number>) => {
-      if (!state.caughtPokemonIds.includes(action.payload)) {
-        state.caughtPokemonIds.push(action.payload);
-      }
-    },
-  },
+    extraReducers: (builder) => {
+        // Handle Login Success
+        builder.addCase(loginUser.fulfilled, (state, action: PayloadAction<any>) => {
+            state.profile = action.payload;
+            state.isLoading = false;
+            state.error = null;
+            // ✅ LOAD CAUGHT POKEMON FROM DB
+            if (action.payload.discovered) {
+                state.caughtPokemonIds = action.payload.discovered;
+            }
+        });
+        builder.addCase(loginUser.pending, (state) => { state.isLoading = true; });
+        builder.addCase(loginUser.rejected, (state, action) => {
+            state.isLoading = false;
+            state.error = action.payload as string;
+        });
+
+        // Handle Signup Success
+        builder.addCase(signupUser.fulfilled, (state, action: PayloadAction<any>) => {
+            state.profile = action.payload;
+            state.isLoading = false;
+            state.caughtPokemonIds = []; // New user has 0 pokemon
+        });
+
+        // Handle Logout
+        builder.addCase(logoutUser.fulfilled, (state) => {
+            state.profile = null;
+            state.caughtPokemonIds = [];
+        });
+
+        // ✅ Handle Capture Success
+        builder.addCase(capturePokemon.fulfilled, (state, action) => {
+            if (!state.caughtPokemonIds.includes(action.payload)) {
+                state.caughtPokemonIds.push(action.payload);
+            }
+        });
+    }
 });
 
-export const { setProfile, addCaughtPokemon } = userSlice.actions;
+export const { setProfile } = userSlice.actions;
 export default userSlice.reducer;
